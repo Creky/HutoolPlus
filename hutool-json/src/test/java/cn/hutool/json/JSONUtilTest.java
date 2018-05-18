@@ -1,9 +1,6 @@
 package cn.hutool.json;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,7 +42,7 @@ public class JSONUtilTest {
 
 	@Test
 	public void toJsonStrTest2() {
-		Map<String, Object> model = new HashMap<String, Object>();
+		Map<String, Object> model = new LinkedHashMap<>();
 		model.put("mobile", "17610836523");
 		model.put("type", 1);
 
@@ -53,13 +50,13 @@ public class JSONUtilTest {
 		data.put("model", model);
 		
 		JSONObject jsonObject = JSONUtil.parseObj(data);
-		Assert.assertEquals("{\"model\":{\"type\":1,\"mobile\":\"17610836523\"}}", jsonObject.toString());
+		Assert.assertEquals("{\"model\":{\"mobile\":\"17610836523\",\"type\":1}}", jsonObject.toString());
 	}
 	
 	@Test
 	public void toJsonStrTest3() {
 		//验证某个字段为JSON字符串时转义是否规范
-		JSONObject object = new JSONObject();
+		JSONObject object = new JSONObject(true);
 		object.put("name", "123123");
 		object.put("value", "\\");
 		object.put("value2", "</");

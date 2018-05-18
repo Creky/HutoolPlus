@@ -39,7 +39,7 @@ import cn.hutool.log.StaticLog;
 public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/** 默认超时时长，-1表示 */
-	public static final int TIMEOUT_DEFAULT = -1;
+	public static final int TIMEOUT_DEFAULT = 30000;
 
 	private static final String BOUNDARY = "--------------------Hutool_" + RandomUtil.randomString(16);
 	private static final byte[] BOUNDARY_END = StrUtil.format("--{}--\r\n", BOUNDARY).getBytes();
