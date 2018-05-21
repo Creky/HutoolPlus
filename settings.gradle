@@ -1,5 +1,5 @@
 rootProject.name = 'hutool-parent'
-include ':hutool-all'
+include ':hutool-all-plus'
 include ':hutool-aop'
 include ':hutool-bloomFilter'
 include ':hutool-cache'
@@ -18,7 +18,7 @@ include ':hutool-json'
 include ':hutool-poi'
 include ':hutool-captcha'
 
-project(':hutool-all').projectDir = "$rootDir/hutool-all" as File
+project(':hutool-all-plus').projectDir = "$rootDir/hutool-all" as File
 project(':hutool-aop').projectDir = "$rootDir/hutool-aop" as File
 project(':hutool-bloomFilter').projectDir = "$rootDir/hutool-bloomFilter" as File
 project(':hutool-cache').projectDir = "$rootDir/hutool-cache" as File

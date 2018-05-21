@@ -3,6 +3,11 @@ allprojects {
 
     group = 'com.hh.hutool'
     version = '4.0.12'
+
+    task wrapper(type: Wrapper) {
+        gradleVersion = '4.7'
+        distributionType = Wrapper.DistributionType.ALL
+    }
 }
 
 subprojects {
