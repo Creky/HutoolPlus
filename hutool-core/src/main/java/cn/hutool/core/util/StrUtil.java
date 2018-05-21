@@ -3017,7 +3017,7 @@ public class StrUtil {
 
 	/**
 	 * 返回字符串 searchStr 在字符串 str 中第 ordinal 次出现的位置。<br>
-	 * 如果 str=null 或 searchStr=null 或 ordinal<=0 则返回-1<br>
+	 * 如果 str=null 或 searchStr=null 或 ordinal&lt;=0 则返回-1<br>
 	 * 此方法来自：Apache-Commons-Lang
 	 * 
 	 * 栗子（*代表任意字符）：

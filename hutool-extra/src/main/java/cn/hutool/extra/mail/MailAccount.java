@@ -203,7 +203,7 @@ public class MailAccount implements Serializable {
 	 * 
 	 * <pre>
 	 * 1. user@xxx.xx
-	 * 2.  name <user@xxx.xx>
+	 * 2.  name &lt;user@xxx.xx&gt;
 	 * </pre>
 	 * 
 	 * @param from 发送方，遵循RFC-822标准

@@ -1,0 +1,5 @@
+
+description = 'hutool-crypto'
+dependencies {
+  compile project(':hutool-core')
+}

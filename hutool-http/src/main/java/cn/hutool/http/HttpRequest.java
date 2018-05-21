@@ -28,15 +28,18 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.ssl.SSLSocketFactoryBuilder;
 import cn.hutool.json.JSON;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import cn.hutool.log.StaticLog;
 
 /**
  * http请求类<br>
  * Http请求类用于构建Http请求并同步获取结果，此类通过 {@link CookiePool}持有域名对应的Cookie值，再次请求时会自动附带Cookie信息
- * 
+ *
  * @author Looly
  */
 public class HttpRequest extends HttpBase<HttpRequest> {
+    public static final Log logger=LogFactory.get();
 
 	/** 默认超时时长，-1表示 */
 	public static final int TIMEOUT_DEFAULT = 30000;
@@ -81,7 +84,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 构造
-	 * 
+	 *
 	 * @param url URL
 	 */
 	public HttpRequest(String url) {
@@ -94,7 +97,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	// ---------------------------------------------------------------- Http Method start
 	/**
 	 * 设置请求方法
-	 * 
+	 *
 	 * @param method HTTP方法
 	 * @return HttpRequest
 	 */
@@ -105,7 +108,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * POST请求
-	 * 
+	 *
 	 * @param url URL
 	 * @return HttpRequest
 	 */
@@ -115,7 +118,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * GET请求
-	 * 
+	 *
 	 * @param url URL
 	 * @return HttpRequest
 	 */
@@ -125,7 +128,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * HEAD请求
-	 * 
+	 *
 	 * @param url URL
 	 * @return HttpRequest
 	 */
@@ -135,7 +138,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * OPTIONS请求
-	 * 
+	 *
 	 * @param url URL
 	 * @return HttpRequest
 	 */
@@ -145,7 +148,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * PUT请求
-	 * 
+	 *
 	 * @param url URL
 	 * @return HttpRequest
 	 */
@@ -155,7 +158,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * PATCH请求
-	 * 
+	 *
 	 * @param url URL
 	 * @return HttpRequest
 	 * @since 3.0.9
@@ -166,7 +169,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * DELETE请求
-	 * 
+	 *
 	 * @param url URL
 	 * @return HttpRequest
 	 */
@@ -176,7 +179,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * TRACE请求
-	 * 
+	 *
 	 * @param url URL
 	 * @return HttpRequest
 	 */
@@ -188,7 +191,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	// ---------------------------------------------------------------- Http Request Header start
 	/**
 	 * 设置contentType
-	 * 
+	 *
 	 * @param contentType contentType
 	 * @return HttpRequest
 	 */
@@ -199,7 +202,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 设置是否为长连接
-	 * 
+	 *
 	 * @param isKeepAlive 是否长连接
 	 * @return HttpRequest
 	 */
@@ -222,7 +225,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 获取内容长度
-	 * 
+	 *
 	 * @return String
 	 */
 	public String contentLength() {
@@ -231,7 +234,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 设置内容长度
-	 * 
+	 *
 	 * @param value 长度
 	 * @return HttpRequest
 	 */
@@ -243,7 +246,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 设置Cookie<br>
 	 * 自定义Cookie后会覆盖Hutool的默认Cookie行为
-	 * 
+	 *
 	 * @param cookies Cookie值数组，如果为{@code null}则设置无效，使用默认Cookie行为
 	 * @return this
 	 * @since 3.1.1
@@ -258,7 +261,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 设置Cookie<br>
 	 * 自定义Cookie后会覆盖Hutool的默认Cookie行为
-	 * 
+	 *
 	 * @param cookie Cookie值，如果为{@code null}则设置无效，使用默认Cookie行为
 	 * @return this
 	 * @since 3.0.7
@@ -272,7 +275,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * 禁用默认Cookie行为，此方法调用后会将Cookie置为空。<br>
 	 * 如果想重新启用Cookie，请调用：{@link #cookie(String)}方法自定义Cookie。<br>
 	 * 如果想启动默认的Cookie行为（自动回填服务器传回的Cookie），则调用{@link #enableDefaultCookie()}
-	 * 
+	 *
 	 * @return this
 	 * @since 3.0.7
 	 */
@@ -282,7 +285,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 打开默认的Cookie行为（自动回填服务器传回的Cookie）
-	 * 
+	 *
 	 * @return this
 	 */
 	public HttpRequest enableDefaultCookie() {
@@ -293,7 +296,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	// ---------------------------------------------------------------- Form start
 	/**
 	 * 设置表单数据<br>
-	 * 
+	 *
 	 * @param name 名
 	 * @param value 值
 	 * @return this
@@ -334,12 +337,12 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 设置表单数据
-	 * 
+	 *
 	 * @param name 名
 	 * @param value 值
 	 * @param parameters 参数对，奇数为名，偶数为值
 	 * @return this
-	 * 
+	 *
 	 */
 	public HttpRequest form(String name, Object value, Object... parameters) {
 		form(name, value);
@@ -353,10 +356,10 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 设置map类型表单数据
-	 * 
+	 *
 	 * @param formMap 表单内容
 	 * @return this
-	 * 
+	 *
 	 */
 	public HttpRequest form(Map<String, Object> formMap) {
 		if (MapUtil.isNotEmpty(formMap)) {
@@ -370,7 +373,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 文件表单项<br>
 	 * 一旦有文件加入，表单变为multipart/form-data
-	 * 
+	 *
 	 * @param name 名
 	 * @param file 需要上传的文件
 	 * @return this
@@ -385,7 +388,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 文件表单项<br>
 	 * 一旦有文件加入，表单变为multipart/form-data
-	 * 
+	 *
 	 * @param name 名
 	 * @param dataSource 数据源，文件可以使用{@link FileDataSource}包装使用
 	 * @return this
@@ -408,7 +411,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 获取表单数据
-	 * 
+	 *
 	 * @return 表单Map
 	 */
 	public Map<String, Object> form() {
@@ -417,7 +420,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 获取文件表单数据
-	 * 
+	 *
 	 * @return 文件表单Map
 	 * @since 3.3.0
 	 */
@@ -429,7 +432,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	// ---------------------------------------------------------------- Body start
 	/**
 	 * 设置内容主体
-	 * 
+	 *
 	 * @param body 请求体
 	 * @return this
 	 */
@@ -440,12 +443,12 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 设置内容主体<br>
 	 * 请求体body参数支持两种类型：
-	 * 
+	 *
 	 * <pre>
 	 * 1. 标准参数，例如 a=1&amp;b=2 这种格式
 	 * 2. Rest模式，此时body需要传入一个JSON或者XML字符串，Hutool会自动绑定其对应的Content-Type
 	 * </pre>
-	 * 
+	 *
 	 * @param body 请求体
 	 * @param contentType 请求体类型
 	 * @return this
@@ -471,7 +474,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 设置JSON内容主体<br>
 	 * 设置默认的Content-Type为 application/json 需在此方法调用前使用charset方法设置编码，否则使用默认编码UTF-8
-	 * 
+	 *
 	 * @param json JSON请求体
 	 * @return this
 	 */
@@ -490,7 +493,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 设置主体字节码<br>
 	 * 需在此方法调用前使用charset方法设置编码，否则使用默认编码UTF-8
-	 * 
+	 *
 	 * @param bodyBytes 主体
 	 * @return this
 	 */
@@ -502,7 +505,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 设置超时，单位：毫秒
-	 * 
+	 *
 	 * @param milliseconds 超时毫秒数
 	 * @return this
 	 */
@@ -513,7 +516,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 禁用缓存
-	 * 
+	 *
 	 * @return this
 	 */
 	public HttpRequest disableCache() {
@@ -523,7 +526,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 是否对URL中的参数进行编码
-	 * 
+	 *
 	 * @param isEncodeUrl 是否对URL中的参数进行编码
 	 * @return this
 	 * @since 4.0.1
@@ -536,7 +539,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 设置是否打开重定向，如果打开默认重定向次数为2<br>
 	 * 此方法效果与{@link #setMaxRedirectCount(int)} 一致
-	 * 
+	 *
 	 * @param isFollowRedirects 是否打开重定向
 	 * @return this
 	 */
@@ -547,7 +550,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 设置最大重定向次数<br>
 	 * 如果次数小于1则表示不重定向，大于等于1表示打开重定向
-	 * 
+	 *
 	 * @param maxRedirectCount 最大重定向次数
 	 * @return this
 	 * @since 3.3.0
@@ -564,7 +567,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 设置域名验证器<br>
 	 * 只针对HTTPS请求，如果不设置，不做验证，所有域名被信任
-	 * 
+	 *
 	 * @param hostnameVerifier HostnameVerifier
 	 * @return this
 	 */
@@ -576,7 +579,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 设置代理
-	 * 
+	 *
 	 * @param proxy 代理 {@link Proxy}
 	 * @return this
 	 */
@@ -589,7 +592,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * 设置SSLSocketFactory<br>
 	 * 只针对HTTPS请求，如果不设置，使用默认的SSLSocketFactory<br>
 	 * 默认SSLSocketFactory为：SSLSocketFactoryBuilder.create().build();
-	 * 
+	 *
 	 * @param ssf SSLScketFactory
 	 * @return this
 	 */
@@ -600,7 +603,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 设置HTTPS安全连接协议，只针对HTTPS请求<br>
-	 * 
+	 *
 	 * @see SSLSocketFactoryBuilder
 	 * @param protocol 协议
 	 * @return this
@@ -618,7 +621,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 执行Reuqest请求
-	 * 
+	 *
 	 * @return this
 	 */
 	public HttpResponse execute() {
@@ -628,7 +631,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 异步请求<br>
 	 * 异步请求后获取的{@link HttpResponse} 为异步模式，此时此对象持有Http链接（http链接并不会关闭），直调用获取内容方法为止
-	 * 
+	 *
 	 * @return 异步对象，使用get方法获取HttpResponse对象
 	 */
 	public HttpResponse executeAsync() {
@@ -637,7 +640,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 执行Reuqest请求
-	 * 
+	 *
 	 * @param isAsync 是否异步
 	 * @return this
 	 */
@@ -662,7 +665,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 简单验证
-	 * 
+	 *
 	 * @param username 用户名
 	 * @param password 密码
 	 * @return HttpRequest
@@ -714,7 +717,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 调用转发，如果需要转发返回转发结果，否则返回<code>null</code>
-	 * 
+	 *
 	 * @return {@link HttpResponse}，无转发返回 <code>null</code>
 	 */
 	private HttpResponse sendRedirectIfPosible() {
@@ -725,11 +728,12 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 		// 手动实现重定向
 		if (this.httpConnection.getHttpURLConnection().getInstanceFollowRedirects()) {
-			int responseCode;
+			int responseCode=-1;
 			try {
 				responseCode = httpConnection.responseCode();
 			} catch (IOException e) {
-				throw new HttpException(e);
+				//throw new HttpException(e);
+                logger.error("Get responseCode failed",e);
 			}
 			if (responseCode != HttpURLConnection.HTTP_OK) {
 				if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_SEE_OTHER) {
@@ -748,7 +752,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 发送数据流
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private void send() throws HttpException {
@@ -761,15 +765,16 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 				}
 			} else {
 				this.httpConnection.connect();
-			}
-		} catch (IOException e) {
-			throw new HttpException(e.getMessage(), e);
-		}
-	}
+            }
+        } catch (IOException e) {
+            //throw new HttpException(e.getMessage(), e);
+            logger.error("Send failed.", e);
+        }
+    }
 
 	/**
 	 * 发送普通表单
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private void sendFormUrlEncoded() throws IOException {
@@ -789,7 +794,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 发送多组件请求（例如包含文件的表单）
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private void sendMltipart() throws IOException {
@@ -810,7 +815,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	// 普通字符串数据
 	/**
 	 * 发送普通表单内容
-	 * 
+	 *
 	 * @param out 输出流
 	 * @throws IOException
 	 */
@@ -828,7 +833,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 发送文件对象表单
-	 * 
+	 *
 	 * @param out 输出流
 	 * @throws IOException
 	 */
@@ -848,7 +853,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	// 添加结尾数据
 	/**
 	 * 上传表单结束
-	 * 
+	 *
 	 * @param out 输出流
 	 * @throws IOException
 	 */
@@ -859,7 +864,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 
 	/**
 	 * 设置表单类型为Multipart（文件上传）
-	 * 
+	 *
 	 * @return HttpConnection
 	 */
 	private void setMultipart() {
@@ -869,7 +874,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/**
 	 * 是否忽略读取响应body部分<br>
 	 * HEAD、CONNECT、OPTIONS、TRACE方法将不读取响应体
-	 * 
+	 *
 	 * @return 是否需要忽略响应body部分
 	 * @since 3.1.2
 	 */

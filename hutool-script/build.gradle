@@ -1,0 +1,5 @@
+
+description = 'hutool-script'
+dependencies {
+  compile project(':hutool-core')
+}

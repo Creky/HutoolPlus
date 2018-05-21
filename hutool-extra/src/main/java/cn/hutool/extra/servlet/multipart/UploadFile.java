@@ -154,7 +154,7 @@ public class UploadFile {
 	// ---------------------------------------------------------------- properties
 
 	/**
-	 * @return 上传文件的大小，< 0 表示未上传
+	 * @return 上传文件的大小，&lt; 0 表示未上传
 	 */
 	public int size() {
 		return size;

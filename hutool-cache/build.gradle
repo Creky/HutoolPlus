@@ -1,0 +1,5 @@
+
+description = 'hutool-cache'
+dependencies {
+  compile project(':hutool-core')
+}

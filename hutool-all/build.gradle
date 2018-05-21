@@ -1,0 +1,62 @@
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.jfrog.bintray'
+
+description = 'hutool-all'
+
+shadowJar {
+    baseName = 'hutool-all-plus'
+    classifier = null
+    version = project.version
+    dependencies {
+        include(dependency(':hutool-core'))
+        include(dependency(':hutool-aop'))
+        include(dependency(':hutool-bloomFilter'))
+        include(dependency(':hutool-cache'))
+        include(dependency(':hutool-crypto'))
+        include(dependency(':hutool-db'))
+        include(dependency(':hutool-dfa'))
+        include(dependency(':hutool-extra'))
+        include(dependency(':hutool-http'))
+        include(dependency(':hutool-log'))
+        include(dependency(':hutool-script'))
+        include(dependency(':hutool-setting'))
+        include(dependency(':hutool-system'))
+        include(dependency(':hutool-cron'))
+        include(dependency(':hutool-json'))
+        include(dependency(':hutool-poi'))
+        include(dependency(':hutool-captcha'))
+    }
+}
+
+dependencies {
+    compile project(':hutool-core')
+    compile project(':hutool-aop')
+    compile project(':hutool-bloomFilter')
+    compile project(':hutool-cache')
+    compile project(':hutool-crypto')
+    compile project(':hutool-db')
+    compile project(':hutool-dfa')
+    compile project(':hutool-extra')
+    compile project(':hutool-http')
+    compile project(':hutool-log')
+    compile project(':hutool-script')
+    compile project(':hutool-setting')
+    compile project(':hutool-system')
+    compile project(':hutool-cron')
+    compile project(':hutool-json')
+    compile project(':hutool-poi')
+    compile project(':hutool-captcha')
+}
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+    pkg {
+        repo = 'HutoolPlus'
+        name = 'HutoolPlus'
+        userOrg = 'HH'
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://gitee.com/888/hutool.git'
+    }
+}

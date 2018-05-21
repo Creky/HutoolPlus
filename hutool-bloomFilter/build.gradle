@@ -1,0 +1,5 @@
+
+description = 'hutool-bloomFilter'
+dependencies {
+  compile project(':hutool-core')
+}

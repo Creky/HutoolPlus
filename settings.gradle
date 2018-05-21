@@ -1,0 +1,38 @@
+rootProject.name = 'hutool-parent'
+include ':hutool-all'
+include ':hutool-aop'
+include ':hutool-bloomFilter'
+include ':hutool-cache'
+include ':hutool-core'
+include ':hutool-cron'
+include ':hutool-crypto'
+include ':hutool-db'
+include ':hutool-dfa'
+include ':hutool-extra'
+include ':hutool-http'
+include ':hutool-log'
+include ':hutool-script'
+include ':hutool-setting'
+include ':hutool-system'
+include ':hutool-json'
+include ':hutool-poi'
+include ':hutool-captcha'
+
+project(':hutool-all').projectDir = "$rootDir/hutool-all" as File
+project(':hutool-aop').projectDir = "$rootDir/hutool-aop" as File
+project(':hutool-bloomFilter').projectDir = "$rootDir/hutool-bloomFilter" as File
+project(':hutool-cache').projectDir = "$rootDir/hutool-cache" as File
+project(':hutool-core').projectDir = "$rootDir/hutool-core" as File
+project(':hutool-cron').projectDir = "$rootDir/hutool-cron" as File
+project(':hutool-crypto').projectDir = "$rootDir/hutool-crypto" as File
+project(':hutool-db').projectDir = "$rootDir/hutool-db" as File
+project(':hutool-dfa').projectDir = "$rootDir/hutool-dfa" as File
+project(':hutool-extra').projectDir = "$rootDir/hutool-extra" as File
+project(':hutool-http').projectDir = "$rootDir/hutool-http" as File
+project(':hutool-log').projectDir = "$rootDir/hutool-log" as File
+project(':hutool-script').projectDir = "$rootDir/hutool-script" as File
+project(':hutool-setting').projectDir = "$rootDir/hutool-setting" as File
+project(':hutool-system').projectDir = "$rootDir/hutool-system" as File
+project(':hutool-json').projectDir = "$rootDir/hutool-json" as File
+project(':hutool-poi').projectDir = "$rootDir/hutool-poi" as File
+project(':hutool-captcha').projectDir = "$rootDir/hutool-captcha" as File

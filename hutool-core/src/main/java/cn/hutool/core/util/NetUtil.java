@@ -414,7 +414,7 @@ public class NetUtil {
 	 * @param host Server主机
 	 * @param port Server端口
 	 * @param data 数据
-	 * @throws IOException IO异常
+	 * @throws IORuntimeException IO异常
 	 * @since 3.3.0
 	 */
 	public static void netCat(String host, int port, byte[] data) throws IORuntimeException {

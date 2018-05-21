@@ -1,0 +1,6 @@
+
+description = 'hutool-dfa'
+dependencies {
+  compile project(':hutool-core')
+  compile project(':hutool-json')
+}

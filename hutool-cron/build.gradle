@@ -1,0 +1,6 @@
+
+description = 'hutool-cron'
+dependencies {
+  compile project(':hutool-core')
+  compile project(':hutool-setting')
+}

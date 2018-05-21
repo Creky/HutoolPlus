@@ -1,0 +1,5 @@
+
+description = 'hutool-captcha'
+dependencies {
+  compile project(':hutool-core')
+}

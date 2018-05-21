@@ -5,8 +5,6 @@ import java.net.HttpCookie;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 import cn.hutool.core.convert.Convert;
@@ -14,6 +12,8 @@ import cn.hutool.core.io.*;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 
 /**
  * Http响应类<br>
@@ -22,7 +22,7 @@ import cn.hutool.core.util.StrUtil;
  * @author Looly
  */
 public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
-    public static final Logger LOGGER = Logger.getLogger(HttpResponse.class.getName());
+    private static final Log logger = LogFactory.get();
 
     /**
      * 持有连接对象
@@ -306,7 +306,7 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
 
             this.in = (this.status < HttpStatus.HTTP_BAD_REQUEST) ? httpConnection.getInputStream() : httpConnection.getErrorStream();
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception occured:", e);
+            logger.error("Exception occured:", e);
 //            if (e instanceof FileNotFoundException) {
 //                //服务器无返回内容，忽略之
 //            } else {

@@ -1,0 +1,6 @@
+
+description = 'hutool-setting'
+dependencies {
+  compile project(':hutool-core')
+  compile project(':hutool-log')
+}
