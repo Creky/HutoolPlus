@@ -1,8 +1,7 @@
-
 description = 'hutool-poi'
 dependencies {
-  compile project(':hutool-core')
-  compile project(':hutool-log')
-    compile group: 'org.apache.poi', name: 'poi-ooxml', version:'3.17'
-    compile group: 'xerces', name: 'xercesImpl', version:'2.11.0'
+    compile project(':hutool-core')
+    compile project(':hutool-log')
+    compileOnly group: 'org.apache.poi', name: 'poi-ooxml', version: '3.17'
+    compileOnly group: 'xerces', name: 'xercesImpl', version: '2.11.0'
 }
