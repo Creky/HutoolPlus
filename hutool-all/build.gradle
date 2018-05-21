@@ -1,6 +1,5 @@
 apply plugin: 'java'
 apply plugin: 'com.github.johnrengelman.shadow'
-apply plugin: 'com.jfrog.bintray'
 
 description = 'hutool-all'
 
@@ -47,16 +46,4 @@ dependencies {
     compile project(':hutool-json')
     compile project(':hutool-poi')
     compile project(':hutool-captcha')
-}
-
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    pkg {
-        repo = 'HutoolPlus'
-        name = 'HutoolPlus'
-        userOrg = 'HH'
-        licenses = ['Apache-2.0']
-        vcsUrl = 'https://gitee.com/888/hutool.git'
-    }
 }

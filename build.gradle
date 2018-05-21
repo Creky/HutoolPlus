@@ -1,7 +1,7 @@
 allprojects {
     apply plugin: 'maven'
 
-    group = 'cn.hutool'
+    group = 'com.hh.hutool'
     version = '4.0.12'
 }
 
@@ -46,6 +46,5 @@ buildscript {
     dependencies {
         classpath 'net.sf.proguard:proguard-gradle:5.3.3'
         classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.0'
     }
 }
