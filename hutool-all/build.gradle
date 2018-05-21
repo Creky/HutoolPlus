@@ -3,6 +3,10 @@ apply plugin: 'com.github.johnrengelman.shadow'
 
 description = 'hutool-all-plus'
 
+configurations.all {
+    transitive = false
+}
+
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
@@ -23,23 +27,23 @@ shadowJar {
     classifier = null
     //archiveName = "$baseName-$version.$extension"
     dependencies {
-        include(dependency(':hutool-core'))
-        include(dependency(':hutool-aop'))
-        include(dependency(':hutool-bloomFilter'))
-        include(dependency(':hutool-cache'))
-        include(dependency(':hutool-crypto'))
-        include(dependency(':hutool-db'))
-        include(dependency(':hutool-dfa'))
-        include(dependency(':hutool-extra'))
-        include(dependency(':hutool-http'))
-        include(dependency(':hutool-log'))
-        include(dependency(':hutool-script'))
-        include(dependency(':hutool-setting'))
-        include(dependency(':hutool-system'))
-        include(dependency(':hutool-cron'))
-        include(dependency(':hutool-json'))
-        include(dependency(':hutool-poi'))
-        include(dependency(':hutool-captcha'))
+        include(project(':hutool-core'))
+        include(project(':hutool-aop'))
+        include(project(':hutool-bloomFilter'))
+        include(project(':hutool-cache'))
+        include(project(':hutool-crypto'))
+        include(project(':hutool-db'))
+        include(project(':hutool-dfa'))
+        include(project(':hutool-extra'))
+        include(project(':hutool-http'))
+        include(project(':hutool-log'))
+        include(project(':hutool-script'))
+        include(project(':hutool-setting'))
+        include(project(':hutool-system'))
+        include(project(':hutool-cron'))
+        include(project(':hutool-json'))
+        include(project(':hutool-poi'))
+        include(project(':hutool-captcha'))
     }
 }
 
