@@ -164,10 +164,10 @@ public class IoUtil {
 		}
 
 		byte[] buffer = new byte[bufferSize];
-		long size = 0;
 		if (null != streamProgress) {
 			streamProgress.start();
 		}
+		long size = 0;
 		try {
 			for (int readSize = -1; (readSize = in.read(buffer)) != EOF;) {
 				out.write(buffer, 0, readSize);
@@ -236,7 +236,7 @@ public class IoUtil {
 	public static long copy(ReadableByteChannel in, WritableByteChannel out, int bufferSize, StreamProgress streamProgress) throws IORuntimeException {
 		Assert.notNull(in, "InputStream is null !");
 		Assert.notNull(out, "OutputStream is null !");
-
+		
 		ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize <= 0 ? DEFAULT_BUFFER_SIZE : bufferSize);
 		long size = 0;
 		if (null != streamProgress) {
@@ -696,7 +696,21 @@ public class IoUtil {
 		if (content == null) {
 			return null;
 		}
-		return new ByteArrayInputStream(StrUtil.bytes(content, charset));
+		return toStream(StrUtil.bytes(content, charset));
+	}
+	
+	/**
+	 * String 转为流
+	 * 
+	 * @param content 内容bytes
+	 * @return 字节流
+	 * @since 4.1.8
+	 */
+	public static ByteArrayInputStream toStream(byte[] content) {
+		if (content == null) {
+			return null;
+		}
+		return new ByteArrayInputStream(content);
 	}
 
 	/**

@@ -244,7 +244,7 @@ public class CollUtil {
 	public static <T> Map<T, Integer> countMap(Iterable<T> collection) {
 		return IterUtil.countMap(collection);
 	}
-	
+
 	/**
 	 * 以 conjunction 为分隔符将集合转换为字符串<br>
 	 * 如果集合元素为数组、{@link Iterable}或{@link Iterator}，则递归组合其为字符串
@@ -469,7 +469,113 @@ public class CollUtil {
 		return set;
 	}
 
-	// ----------------------------------------------------------------------------------------------- new ArrayList
+	// ----------------------------------------------------------------------------------------------- List
+	/**
+	 * 新建一个空List
+	 * 
+	 * @param <T> 集合元素类型
+	 * @param isLinked 是否新建LinkedList
+	 * @return List对象
+	 * @since 4.1.2
+	 */
+	public static <T> List<T> list(boolean isLinked) {
+		return isLinked ? new LinkedList<T>() : new ArrayList<T>();
+	}
+
+	/**
+	 * 新建一个List
+	 * 
+	 * @param <T> 集合元素类型
+	 * @param isLinked 是否新建LinkedList
+	 * @param values 数组
+	 * @return List对象
+	 * @since 4.1.2
+	 */
+	@SafeVarargs
+	public static <T> List<T> list(boolean isLinked, T... values) {
+		if (ArrayUtil.isEmpty(values)) {
+			return list(isLinked);
+		}
+		List<T> arrayList = isLinked ? new LinkedList<T>() : new ArrayList<T>(values.length);
+		for (T t : values) {
+			arrayList.add(t);
+		}
+		return arrayList;
+	}
+
+	/**
+	 * 新建一个List
+	 * 
+	 * @param <T> 集合元素类型
+	 * @param isLinked 是否新建LinkedList
+	 * @param collection 集合
+	 * @return List对象
+	 * @since 4.1.2
+	 */
+	public static <T> List<T> list(boolean isLinked, Collection<T> collection) {
+		if (null == collection) {
+			return list(isLinked);
+		}
+		return isLinked ? new LinkedList<T>(collection) : new ArrayList<T>(collection);
+	}
+
+	/**
+	 * 新建一个List<br>
+	 * 提供的参数为null时返回空{@link ArrayList}
+	 * 
+	 * @param <T> 集合元素类型
+	 * @param isLinked 是否新建LinkedList
+	 * @param iterable {@link Iterable}
+	 * @return List对象
+	 * @since 4.1.2
+	 */
+	public static <T> List<T> list(boolean isLinked, Iterable<T> iterable) {
+		if (null == iterable) {
+			return list(isLinked);
+		}
+		return list(isLinked, iterable.iterator());
+	}
+
+	/**
+	 * 新建一个ArrayList<br>
+	 * 提供的参数为null时返回空{@link ArrayList}
+	 * 
+	 * @param <T> 集合元素类型
+	 * @param isLinked 是否新建LinkedList
+	 * @param iter {@link Iterator}
+	 * @return ArrayList对象
+	 * @since 4.1.2
+	 */
+	public static <T> List<T> list(boolean isLinked, Iterator<T> iter) {
+		final List<T> list = list(isLinked);
+		if (null != iter) {
+			while (iter.hasNext()) {
+				list.add(iter.next());
+			}
+		}
+		return list;
+	}
+
+	/**
+	 * 新建一个List<br>
+	 * 提供的参数为null时返回空{@link ArrayList}
+	 * 
+	 * @param <T> 集合元素类型
+	 * @param isLinked 是否新建LinkedList
+	 * @param enumration {@link Enumeration}
+	 * @return ArrayList对象
+	 * @since 3.0.8
+	 */
+	public static <T> List<T> list(boolean isLinked, Enumeration<T> enumration) {
+		final List<T> list = list(isLinked);
+		if (null != enumration) {
+			while (enumration.hasMoreElements()) {
+				list.add(enumration.nextElement());
+			}
+		}
+		return list;
+	}
+
 	/**
 	 * 新建一个ArrayList
 	 * 
@@ -479,16 +585,9 @@ public class CollUtil {
 	 */
 	@SafeVarargs
 	public static <T> ArrayList<T> newArrayList(T... values) {
-		if (null == values) {
-			return new ArrayList<>();
-		}
-		ArrayList<T> arrayList = new ArrayList<T>(values.length);
-		for (T t : values) {
-			arrayList.add(t);
-		}
-		return arrayList;
+		return (ArrayList<T>) list(false, values);
 	}
-	
+
 	/**
 	 * 数组转为ArrayList
 	 * 
@@ -501,7 +600,7 @@ public class CollUtil {
 	public static <T> ArrayList<T> toList(T... values) {
 		return newArrayList(values);
 	}
-	
+
 	/**
 	 * 新建一个ArrayList
 	 * 
@@ -510,10 +609,7 @@ public class CollUtil {
 	 * @return ArrayList对象
 	 */
 	public static <T> ArrayList<T> newArrayList(Collection<T> collection) {
-		if (null == collection) {
-			return new ArrayList<>();
-		}
-		return new ArrayList<T>(collection);
+		return (ArrayList<T>) list(false, collection);
 	}
 
 	/**
@@ -526,7 +622,7 @@ public class CollUtil {
 	 * @since 3.1.0
 	 */
 	public static <T> ArrayList<T> newArrayList(Iterable<T> iterable) {
-		return (null == iterable) ? new ArrayList<T>() : newArrayList(iterable.iterator());
+		return (ArrayList<T>) list(false, iterable);
 	}
 
 	/**
@@ -539,14 +635,7 @@ public class CollUtil {
 	 * @since 3.0.8
 	 */
 	public static <T> ArrayList<T> newArrayList(Iterator<T> iter) {
-		final ArrayList<T> list = new ArrayList<>();
-		if (null == iter) {
-			return list;
-		}
-		while (iter.hasNext()) {
-			list.add(iter.next());
-		}
-		return list;
+		return (ArrayList<T>) list(false, iter);
 	}
 
 	/**
@@ -559,14 +648,21 @@ public class CollUtil {
 	 * @since 3.0.8
 	 */
 	public static <T> ArrayList<T> newArrayList(Enumeration<T> enumration) {
-		final ArrayList<T> list = new ArrayList<>();
-		if (null == enumration) {
-			return list;
-		}
-		while (enumration.hasMoreElements()) {
-			list.add(enumration.nextElement());
-		}
-		return list;
+		return (ArrayList<T>) list(false, enumration);
+	}
+
+	// ----------------------------------------------------------------------new LinkedList
+	/**
+	 * 新建LinkedList
+	 * 
+	 * @param values 数组
+	 * @param <T> 类型
+	 * @return LinkedList
+	 * @since 4.1.2
+	 */
+	@SafeVarargs
+	public static <T> LinkedList<T> newLinkedList(T... values) {
+		return (LinkedList<T>) list(true, values);
 	}
 
 	/**
@@ -827,7 +923,34 @@ public class CollUtil {
 
 	/**
 	 * 过滤<br>
-	 * 过滤过程通过传入的Filter实现来过滤返回需要的元素内容，这个Editor实现可以实现以下功能：
+	 * 过滤过程通过传入的Editor实现来返回需要的元素内容，这个Editor实现可以实现以下功能：
+	 * 
+	 * <pre>
+	 * 1、过滤出需要的对象，如果返回null表示这个元素对象抛弃
+	 * 2、修改元素对象，返回集合中为修改后的对象
+	 * </pre>
+	 * 
+	 * @param <T> 集合元素类型
+	 * @param list 集合
+	 * @param editor 编辑器接口
+	 * @return 过滤后的数组
+	 * @since 4.1.8
+	 */
+	public static <T> List<T> filter(List<T> list, Editor<T> editor) {
+		final List<T> list2 = (list instanceof LinkedList) ? new LinkedList<T>() : new ArrayList<T>(list.size());
+		T modified;
+		for (T t : list) {
+			modified = editor.edit(t);
+			if (null != modified) {
+				list2.add(modified);
+			}
+		}
+		return list2;
+	}
+
+	/**
+	 * 过滤<br>
+	 * 过滤过程通过传入的Filter实现来过滤返回需要的元素内容，这个Filter实现可以实现以下功能：
 	 * 
 	 * <pre>
 	 * 1、过滤出需要的对象，{@link Filter#accept(Object)}方法返回true的对象将被加入结果集合中
@@ -857,6 +980,30 @@ public class CollUtil {
 	}
 
 	/**
+	 * 过滤<br>
+	 * 过滤过程通过传入的Filter实现来过滤返回需要的元素内容，这个Filter实现可以实现以下功能：
+	 * 
+	 * <pre>
+	 * 1、过滤出需要的对象，{@link Filter#accept(Object)}方法返回true的对象将被加入结果集合中
+	 * </pre>
+	 * 
+	 * @param <T> 集合元素类型
+	 * @param list 集合
+	 * @param filter 过滤器
+	 * @return 过滤后的数组
+	 * @since 4.1.8
+	 */
+	public static <T> List<T> filter(List<T> list, Filter<T> filter) {
+		final List<T> list2 = (list instanceof LinkedList) ? new LinkedList<T>() : new ArrayList<T>(list.size());
+		for (T t : list) {
+			if (filter.accept(t)) {
+				list2.add(t);
+			}
+		}
+		return list2;
+	}
+
+	/**
 	 * 去除{@code null} 元素
 	 * 
 	 * @param collection 集合
@@ -871,6 +1018,20 @@ public class CollUtil {
 				return t;
 			}
 		});
+	}
+
+	/**
+	 * 去掉集合中的多个元素
+	 * 
+	 * @param collection 集合
+	 * @param elesRemoved 被去掉的元素数组
+	 * @return 原集合
+	 * @since 4.1.0
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> Collection<T> removeAny(Collection<T> collection, T... elesRemoved) {
+		collection.removeAll(newHashSet(elesRemoved));
+		return collection;
 	}
 
 	/**
@@ -953,9 +1114,11 @@ public class CollUtil {
 	 * @since 3.1.0
 	 */
 	public static <T> T findOne(Iterable<T> collection, Filter<T> filter) {
-		for (T t : collection) {
-			if (filter.accept(t)) {
-				return t;
+		if (null != collection) {
+			for (T t : collection) {
+				if (filter.accept(t)) {
+					return t;
+				}
 			}
 		}
 		return null;
@@ -1466,9 +1629,9 @@ public class CollUtil {
 		} else if (value instanceof Iterable) {
 			iter = ((Iterable) value).iterator();
 		} else if (value instanceof Enumeration) {
-			iter = new EnumerationIterator<>((Enumeration) value);
+			iter = new EnumerationIter<>((Enumeration) value);
 		} else if (ArrayUtil.isArray(value)) {
-			iter = new ArrayIterator<>(value);
+			iter = new ArrayIter<>(value);
 		} else {
 			throw new UtilException("Unsupport value type [] !", value.getClass());
 		}
@@ -1587,7 +1750,7 @@ public class CollUtil {
 			return (T) ((Collection<T>) collection).toArray()[index];
 		}
 	}
-	
+
 	/**
 	 * 获取集合中指定多个下标的元素值，下标可以为负数，例如-1表示最后一个元素
 	 * 
@@ -1604,7 +1767,7 @@ public class CollUtil {
 		if (collection instanceof List) {
 			final List<T> list = ((List<T>) collection);
 			for (int index : indexes) {
-				if(index < 0) {
+				if (index < 0) {
 					index += size;
 				}
 				result.add(list.get(index));
@@ -1612,10 +1775,10 @@ public class CollUtil {
 		} else {
 			Object[] array = ((Collection<T>) collection).toArray();
 			for (int index : indexes) {
-				if(index < 0) {
+				if (index < 0) {
 					index += size;
 				}
-				result.add((T)array[index]);
+				result.add((T) array[index]);
 			}
 		}
 		return result;
@@ -1819,7 +1982,7 @@ public class CollUtil {
 		Collections.sort(list, c);
 		return list;
 	}
-	
+
 	/**
 	 * 根据Bean的属性排序
 	 * 
@@ -1829,10 +1992,10 @@ public class CollUtil {
 	 * @return 排序后的List
 	 * @since 4.0.6
 	 */
-	public static <T> List<T> sortByProperty(Collection<T> collection, String property){
+	public static <T> List<T> sortByProperty(Collection<T> collection, String property) {
 		return sort(collection, new PropertyComparator<>(property));
 	}
-	
+
 	/**
 	 * 根据Bean的属性排序
 	 * 
@@ -1842,10 +2005,10 @@ public class CollUtil {
 	 * @return 排序后的List
 	 * @since 4.0.6
 	 */
-	public static <T> List<T> sortByProperty(List<T> list, String property){
+	public static <T> List<T> sortByProperty(List<T> list, String property) {
 		return sort(list, new PropertyComparator<>(property));
 	}
-	
+
 	/**
 	 * 根据汉字的拼音顺序排序
 	 * 
@@ -1853,10 +2016,10 @@ public class CollUtil {
 	 * @return 排序后的List
 	 * @since 4.0.8
 	 */
-	public static <T> List<String> sortByPinyin(Collection<String> collection){
+	public static <T> List<String> sortByPinyin(Collection<String> collection) {
 		return sort(collection, new PinyinComparator());
 	}
-	
+
 	/**
 	 * 根据汉字的拼音顺序排序
 	 * 
@@ -1864,7 +2027,7 @@ public class CollUtil {
 	 * @return 排序后的List
 	 * @since 4.0.8
 	 */
-	public static <T> List<String> sortByPinyin(List<String> list){
+	public static <T> List<String> sortByPinyin(List<String> list) {
 		return sort(list, new PinyinComparator());
 	}
 
@@ -1998,6 +2161,7 @@ public class CollUtil {
 	/**
 	 * 分组，按照{@link Hash}接口定义的hash算法，集合中的元素放入hash值对应的子列表中
 	 * 
+	 * @param <T> 元素类型
 	 * @param collection 被分组的集合
 	 * @param hash Hash值算法，决定元素放在第几个分组的规则
 	 * @return 分组后的集合
@@ -2041,6 +2205,7 @@ public class CollUtil {
 	/**
 	 * 根据元素的指定字段名分组，非Bean都放在第一个分组中
 	 * 
+	 * @param <T> 元素类型
 	 * @param collection 集合
 	 * @param fieldName 元素Bean中的字段名，非Bean都放在第一个分组中
 	 * @return 分组列表
@@ -2070,6 +2235,7 @@ public class CollUtil {
 	/**
 	 * 反序给定List，会在原List基础上直接修改
 	 * 
+	 * @param <T> 元素类型
 	 * @param list 被反转的List
 	 * @return 反转后的List
 	 * @since 4.0.6
@@ -2082,6 +2248,7 @@ public class CollUtil {
 	/**
 	 * 反序给定List，会创建一个新的List，原List数据不变
 	 * 
+	 * @param <T> 元素类型
 	 * @param list 被反转的List
 	 * @return 反转后的List
 	 * @since 4.0.6
@@ -2089,6 +2256,24 @@ public class CollUtil {
 	public static <T> List<T> reverseNew(List<T> list) {
 		final List<T> list2 = ObjectUtil.clone(list);
 		return reverse(list2);
+	}
+
+	/**
+	 * 设置或增加元素。当index小于List的长度时，替换指定位置的值，否则在尾部追加
+	 * 
+	 * @param list List列表
+	 * @param index 位置
+	 * @param element 新元素
+	 * @return 原List
+	 * @since 4.1.2
+	 */
+	public static <T> List<T> setOrAppend(List<T> list, int index, T element) {
+		if (index < list.size()) {
+			list.set(index, element);
+		} else {
+			list.add(element);
+		}
+		return list;
 	}
 
 	// ---------------------------------------------------------------------------------------------- Interface start

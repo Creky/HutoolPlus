@@ -3,6 +3,9 @@ package cn.hutool.http;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -11,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.activation.DataSource;
-import javax.activation.FileDataSource;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -20,6 +21,11 @@ import cn.hutool.core.codec.Base64;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.io.resource.BytesResource;
+import cn.hutool.core.io.resource.FileResource;
+import cn.hutool.core.io.resource.MultiFileResource;
+import cn.hutool.core.io.resource.MultiResource;
+import cn.hutool.core.io.resource.Resource;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ArrayUtil;
@@ -34,14 +40,14 @@ import cn.hutool.log.StaticLog;
 
 /**
  * http请求类<br>
- * Http请求类用于构建Http请求并同步获取结果，此类通过 {@link CookiePool}持有域名对应的Cookie值，再次请求时会自动附带Cookie信息
+ * Http请求类用于构建Http请求并同步获取结果，此类通过CookieManager持有域名对应的Cookie值，再次请求时会自动附带Cookie信息
  *
  * @author Looly
  */
 public class HttpRequest extends HttpBase<HttpRequest> {
     public static final Log logger=LogFactory.get();
 
-	/** 默认超时时长，-1表示 */
+	/** 默认超时时长，-1表示默认超时时长 */
 	public static final int TIMEOUT_DEFAULT = 30000;
 
 	private static final String BOUNDARY = "--------------------Hutool_" + RandomUtil.randomString(16);
@@ -53,6 +59,13 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	private static final String CONTENT_TYPE_MULTIPART_PREFIX = "multipart/form-data; boundary=";
 	private static final String CONTENT_TYPE_FILE_TEMPLATE = "Content-Type: {}\r\n\r\n";
 
+	/** Cookie管理 */
+	protected static CookieManager cookieManager = new CookieManager();
+	static {
+		cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+		CookieHandler.setDefault(cookieManager);
+	}
+
 	private String url;
 	private Method method = Method.GET;
 	/** 默认超时 */
@@ -60,7 +73,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	/** 存储表单数据 */
 	private Map<String, Object> form;
 	/** 文件表单对象，用于文件上传 */
-	private Map<String, DataSource> fileForm;
+	private Map<String, Resource> fileForm;
 	/** 文件表单对象，用于文件上传 */
 	private String cookie;
 
@@ -70,6 +83,8 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	private boolean isDisableCache;
 	/** 是否对url进行编码 */
 	private boolean isEncodeUrl;
+	/** 是否是REST请求模式 */
+	private boolean isRest;
 	/** 重定向次数计数器，内部使用 */
 	private int redirectCount;
 	/** 最大重定向次数 */
@@ -94,18 +109,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 		this.header(GlobalHeaders.INSTANCE.headers);
 	}
 
-	// ---------------------------------------------------------------- Http Method start
-	/**
-	 * 设置请求方法
-	 *
-	 * @param method HTTP方法
-	 * @return HttpRequest
-	 */
-	public HttpRequest method(Method method) {
-		this.method = method;
-		return this;
-	}
-
+	// ---------------------------------------------------------------- static Http Method start
 	/**
 	 * POST请求
 	 *
@@ -186,7 +190,63 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	public static HttpRequest trace(String url) {
 		return new HttpRequest(url).method(Method.TRACE);
 	}
-	// ---------------------------------------------------------------- Http Method end
+	// ---------------------------------------------------------------- static Http Method end
+
+	/**
+	 * 获取请求URL
+	 * @return URL字符串
+	 * @since 4.1.8
+	 */
+	public String getUrl() {
+		return url;
+	}
+
+	/**
+	 * 设置URL
+	 * @param url url字符串
+	 * @since 4.1.8
+	 */
+	public void setUrl(String url) {
+		this.url = url;
+	}
+	
+	/**
+	 * 获取Http请求方法
+	 * 
+	 * @return {@link Method}
+	 * @since 4.1.8
+	 */
+	public Method getMethod() {
+		return this.method;
+	}
+
+	/**
+	 * 设置请求方法
+	 * 
+	 * @param method HTTP方法
+	 * @return HttpRequest
+	 * @see #method(Method)
+	 * @since 4.1.8
+	 */
+	public HttpRequest setMethod(Method method) {
+		return method(method);
+	}
+
+	/**
+	 * 设置请求方法
+	 * 
+	 * @param method HTTP方法
+	 * @return HttpRequest
+	 */
+	public HttpRequest method(Method method) {
+		if (Method.PATCH == method) {
+			this.method = Method.POST;
+			this.header("X-HTTP-Method-Override", "PATCH");
+		} else {
+			this.method = method;
+		}
+		return this;
+	}
 
 	// ---------------------------------------------------------------- Http Request Header start
 	/**
@@ -312,11 +372,11 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 		if (value instanceof File) {
 			//文件上传
 			return this.form(name, (File) value);
-		} else if (value instanceof DataSource) {
+		} else if (value instanceof Resource) {
 			//自定义流上传
-			return this.form(name, (DataSource) value);
+			return this.form(name, (Resource) value);
 		} else if (this.form == null) {
-			form = new HashMap<String, Object>();
+			this.form = new HashMap<>();
 		}
 
 		String strValue;
@@ -324,6 +384,10 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 			// 列表对象
 			strValue = CollectionUtil.join((List<?>) value, ",");
 		} else if (ArrayUtil.isArray(value)) {
+			if (File.class == ArrayUtil.getComponentType(value)) {
+				// 多文件
+				return this.form(name, (File[]) value);
+			}
 			// 数组对象
 			strValue = ArrayUtil.join((Object[]) value, ",");
 		} else {
@@ -375,12 +439,58 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * 一旦有文件加入，表单变为multipart/form-data
 	 *
 	 * @param name 名
+	 * @param files 需要上传的文件
+	 * @return this
+	 */
+	public HttpRequest form(String name, File... files) {
+		if (1 == files.length) {
+			final File file = files[0];
+			return form(name, file, file.getName());
+		}
+		return form(name, new MultiFileResource(files));
+	}
+
+	/**
+	 * 文件表单项<br>
+	 * 一旦有文件加入，表单变为multipart/form-data
+	 * 
+	 * @param name 名
 	 * @param file 需要上传的文件
 	 * @return this
 	 */
 	public HttpRequest form(String name, File file) {
+		return form(name, file, file.getName());
+	}
+
+	/**
+	 * 文件表单项<br>
+	 * 一旦有文件加入，表单变为multipart/form-data
+	 * 
+	 * @param name 名
+	 * @param file 需要上传的文件
+	 * @param fileName 文件名，为空使用文件默认的文件名
+	 * @return this
+	 */
+	public HttpRequest form(String name, File file, String fileName) {
 		if (null != file) {
-			form(name, new FileDataSource(file));
+			form(name, new FileResource(file, fileName));
+		}
+		return this;
+	}
+
+	/**
+	 * 文件byte[]表单项<br>
+	 * 一旦有文件加入，表单变为multipart/form-data
+	 * 
+	 * @param name 名
+	 * @param fileBytes 需要上传的文件
+	 * @param fileName 文件名
+	 * @return this
+	 * @since 4.1.0
+	 */
+	public HttpRequest form(String name, byte[] fileBytes, String fileName) {
+		if (null != fileBytes) {
+			form(name, new BytesResource(fileBytes, fileName));
 		}
 		return this;
 	}
@@ -390,21 +500,21 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * 一旦有文件加入，表单变为multipart/form-data
 	 *
 	 * @param name 名
-	 * @param dataSource 数据源，文件可以使用{@link FileDataSource}包装使用
+	 * @param resource 数据源，文件可以使用{@link FileResource}包装使用
 	 * @return this
 	 * @since 4.0.9
 	 */
-	public HttpRequest form(String name, DataSource dataSource) {
-		if (null != dataSource) {
+	public HttpRequest form(String name, Resource resource) {
+		if (null != resource) {
 			if (false == isKeepAlive()) {
 				keepAlive(true);
 			}
 
 			if (null == this.fileForm) {
-				fileForm = new HashMap<String, DataSource>();
+				fileForm = new HashMap<>();
 			}
 			// 文件对象
-			this.fileForm.put(name, dataSource);
+			this.fileForm.put(name, resource);
 		}
 		return this;
 	}
@@ -424,7 +534,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * @return 文件表单Map
 	 * @since 3.3.0
 	 */
-	public Map<String, DataSource> fileForm() {
+	public Map<String, Resource> fileForm() {
 		return this.fileForm;
 	}
 	// ---------------------------------------------------------------- Form end
@@ -464,9 +574,18 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 		} else {
 			// 在用户未自定义的情况下自动根据内容判断
 			contentType = HttpUtil.getContentTypeByRequestBody(body);
-			if (null != contentType && ContentType.isFormUrlEncoed(this.header(Header.CONTENT_TYPE))) {
+			if (null != contentType && ContentType.isDefault(this.header(Header.CONTENT_TYPE))) {
+				if (null != this.charset) {
+					// 附加编码信息
+					contentType = StrUtil.format("{};charset={}", contentType, this.charset.name());
+				}
 				this.contentType(contentType);
 			}
+		}
+
+		// 判断是否为rest请求
+		if (StrUtil.containsAnyIgnoreCase(contentType, "json", "xml")) {
+			this.isRest = true;
 		}
 		return this;
 	}
@@ -479,16 +598,8 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * @return this
 	 */
 	public HttpRequest body(JSON json) {
-		this.body(json.toString());
-
-		String contentTypeJson = "application/json";
-		if (null != this.charset) {
-			contentTypeJson = StrUtil.format("{};charset={}", contentTypeJson, this.charset.name());
+		return this.body(json.toString());
 		}
-		this.contentType(contentTypeJson);
-
-		return this;
-	}
 
 	/**
 	 * 设置主体字节码<br>
@@ -543,8 +654,8 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * @param isFollowRedirects 是否打开重定向
 	 * @return this
 	 */
-	public HttpRequest setFollowRedirects(Boolean isFollowRedirects) {
-		return setMaxRedirectCount(2);
+	public HttpRequest setFollowRedirects(boolean isFollowRedirects) {
+		return setMaxRedirectCount(isFollowRedirects ? 2 : 0);
 	}
 
 	/**
@@ -705,7 +816,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * 对于GET请求将参数加到URL中
 	 */
 	private void urlWithParamIfGet() {
-		if (Method.GET.equals(method)) {
+		if (Method.GET.equals(method) && false == this.isRest) {
 			// 优先使用body形式的参数，不存在使用form
 			if (ArrayUtil.isNotEmpty(this.bodyBytes)) {
 				this.url = HttpUtil.urlWithForm(this.url, StrUtil.str(this.bodyBytes, this.charset), this.charset, this.isEncodeUrl);
@@ -757,11 +868,11 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 */
 	private void send() throws HttpException {
 		try {
-			if (Method.POST.equals(method) || Method.PUT.equals(method)) {
-				if (CollectionUtil.isEmpty(fileForm)) {
+			if (Method.POST.equals(this.method) || Method.PUT.equals(this.method) || this.isRest) {
+				if (CollectionUtil.isEmpty(this.fileForm)) {
 					sendFormUrlEncoded();// 普通表单
 				} else {
-					sendMltipart(); // 文件上传表单
+					sendMultipart(); // 文件上传表单
 				}
 			} else {
 				this.httpConnection.connect();
@@ -797,7 +908,7 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 *
 	 * @throws IOException
 	 */
-	private void sendMltipart() throws IOException {
+	private void sendMultipart() throws IOException {
 		setMultipart();// 设置表单类型为Multipart
 
 		final OutputStream out = this.httpConnection.getOutputStream();
@@ -838,16 +949,35 @@ public class HttpRequest extends HttpBase<HttpRequest> {
 	 * @throws IOException
 	 */
 	private void writeFileForm(OutputStream out) throws IOException {
-		DataSource dataSource;
-		for (Entry<String, DataSource> entry : this.fileForm.entrySet()) {
-			dataSource = entry.getValue();
-			StringBuilder builder = StrUtil.builder().append("--").append(BOUNDARY).append(StrUtil.CRLF);
-			builder.append(StrUtil.format(CONTENT_DISPOSITION_FILE_TEMPLATE, entry.getKey(), dataSource.getName()));
-			builder.append(StrUtil.format(CONTENT_TYPE_FILE_TEMPLATE, HttpUtil.getMimeType(dataSource.getName())));
+		for (Entry<String, Resource> entry : this.fileForm.entrySet()) {
+			appendPart(entry.getKey(), entry.getValue(), out);
+		}
+	}
+
+	/**
+	 * 添加Multipart表单的数据项
+	 * 
+	 * @param formFieldName 表单名
+	 * @param resource 资源，可以是文件等
+	 * @param out Http流
+	 * @since 4.1.0
+	 */
+	private void appendPart(String formFieldName, Resource resource, OutputStream out) {
+		if (resource instanceof MultiResource) {
+			// 多资源
+			for (Resource subResource : (MultiResource) resource) {
+				appendPart(formFieldName, subResource, out);
+			}
+		} else {
+			// 普通资源
+			final StringBuilder builder = StrUtil.builder().append("--").append(BOUNDARY).append(StrUtil.CRLF);
+			builder.append(StrUtil.format(CONTENT_DISPOSITION_FILE_TEMPLATE, formFieldName, resource.getName()));
+			builder.append(StrUtil.format(CONTENT_TYPE_FILE_TEMPLATE, HttpUtil.getMimeType(resource.getName())));
 			IoUtil.write(out, this.charset, false, builder);
-			IoUtil.copy(dataSource.getInputStream(), out);
+			IoUtil.copy(resource.getStream(), out);
 			IoUtil.write(out, this.charset, false, StrUtil.CRLF);
 		}
+
 	}
 
 	// 添加结尾数据

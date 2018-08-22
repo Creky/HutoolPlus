@@ -18,7 +18,7 @@ import cn.hutool.core.util.StrUtil;
  * @author Looly
  *
  */
-public final class Validator {
+public class Validator {
 
 	private Validator() {
 	}
@@ -331,7 +331,7 @@ public final class Validator {
 			}
 		});
 	}
-	
+
 	/**
 	 * 验证是否全部为字母组成，包括大写和小写字母和汉字
 	 * 
@@ -345,7 +345,7 @@ public final class Validator {
 			throw new ValidateException(errorMsg);
 		}
 	}
-	
+
 	/**
 	 * 判断字符串是否全部为大写字母
 	 * 
@@ -361,7 +361,7 @@ public final class Validator {
 			}
 		});
 	}
-	
+
 	/**
 	 * 验证字符串是否全部为大写字母
 	 * 
@@ -375,7 +375,7 @@ public final class Validator {
 			throw new ValidateException(errorMsg);
 		}
 	}
-	
+
 	/**
 	 * 判断字符串是否全部为小写字母
 	 * 
@@ -391,7 +391,7 @@ public final class Validator {
 			}
 		});
 	}
-	
+
 	/**
 	 * 验证字符串是否全部为小写字母
 	 * 
@@ -429,6 +429,31 @@ public final class Validator {
 		}
 	}
 	
+	/**
+	 * 验证该字符串是否是字母（包括大写和小写字母）
+	 * 
+	 * @param value 字符串内容
+	 * @return 是否是字母（包括大写和小写字母）
+	 * @since 4.1.8
+	 */
+	public static boolean isWord(String value) {
+		return isMactchRegex(PatternPool.WORD, value);
+	}
+	
+	/**
+	 * 验证是否为字母（包括大写和小写字母）
+	 * 
+	 * @param value 表单值
+	 * @param errorMsg 验证错误的信息
+	 * @throws ValidateException 验证异常
+	 * @since 4.1.8
+	 */
+	public static void validateWord(String value, String errorMsg) throws ValidateException {
+		if (false == isWord(value)) {
+			throw new ValidateException(errorMsg);
+		}
+	}
+
 	/**
 	 * 验证是否为货币
 	 * 
@@ -645,10 +670,35 @@ public final class Validator {
 	}
 
 	/**
+	 * 验证是否为MAC地址
+	 * 
+	 * @param value 值
+	 * @return 是否为MAC地址
+	 * @since 4.1.3
+	 */
+	public static boolean isMac(String value) {
+		return isMactchRegex(PatternPool.MAC_ADDRESS, value);
+	}
+
+	/**
+	 * 验证是否为MAC地址
+	 * 
+	 * @param value 值
+	 * @param errorMsg 验证错误的信息
+	 * @throws ValidateException 验证异常
+	 * @since 4.1.3
+	 */
+	public static void validateMac(String value, String errorMsg) throws ValidateException {
+		if (false == isMac(value)) {
+			throw new ValidateException(errorMsg);
+		}
+	}
+
+	/**
 	 * 验证是否为中国车牌号
 	 * 
 	 * @param value 值
-	 * @return 是否为IPV4地址
+	 * @return 是否为中国车牌号
 	 * @since 3.0.6
 	 */
 	public static boolean isPlateNumber(String value) {

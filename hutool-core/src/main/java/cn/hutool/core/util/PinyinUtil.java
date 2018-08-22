@@ -87,11 +87,11 @@ public class PinyinUtil {
 		}
 		final byte[] bys = String.valueOf(ch).getBytes(CharsetUtil.CHARSET_GBK);
 		if (bys.length == 1) {
-			return '*';
+			return ch;
 		}
 		int count = (bys[0] + 256) * 256 + bys[1] + 256;
 		if (count < 45217) {
-			return '*';
+			return ch;
 		} else if (count < 45253) {
 			return 'a';
 		} else if (count < 45761) {
@@ -139,7 +139,7 @@ public class PinyinUtil {
 		} else if (count < 55290) {
 			return 'z';
 		}
-		return ' ';
+		return ch;
 	}
 	
 	/**
@@ -158,8 +158,9 @@ public class PinyinUtil {
 		for (int j = 0; j < len; j++) {
 			strTemp = chinese.substring(j, j + 1);
 			int ascii = getChsAscii(strTemp);
-			if (ascii > 0 && ascii < 160) {
-				result.append(ascii);
+			if (ascii > 0) {
+				//非汉字
+				result.append((char)ascii);
 			} else {
 				for (int i = pinyinValue.length - 1; i >= 0; i--) {
 					if (pinyinValue[i] <= ascii) {

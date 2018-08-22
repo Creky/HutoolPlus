@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import cn.hutool.core.bean.BeanPath;
-import cn.hutool.core.collection.ArrayIterator;
+import cn.hutool.core.collection.ArrayIter;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.impl.CollectionConverter;
 
@@ -146,7 +146,7 @@ public class JSONArray extends JSONGetter<Integer> implements JSON, List<Object>
 		}else {
 			Iterator<?> iter;
 			if (object.getClass().isArray()) {// 数组
-				iter = new ArrayIterator<>(object);
+				iter = new ArrayIter<>(object);
 			}else if (object instanceof Iterator<?>) {// Iterator
 				iter = ((Iterator<?>) object);
 			} else if (object instanceof Iterable<?>) {// Iterable
@@ -433,6 +433,16 @@ public class JSONArray extends JSONGetter<Integer> implements JSON, List<Object>
 	public Iterator<Object> iterator() {
 		return rawList.iterator();
 	}
+	
+	/**
+	 * 当此JSON列表的每个元素都是一个JSONObject时，可以调用此方法返回一个Iterable，便于使用foreach语法遍历
+	 * 
+	 * @return Iterable
+	 * @since 4.0.12
+	 */
+	public Iterable<JSONObject> jsonIter(){
+		return new JSONObjectIter(iterator());
+	}
 
 	@Override
 	public int size() {
@@ -496,7 +506,7 @@ public class JSONArray extends JSONGetter<Integer> implements JSON, List<Object>
 			return false;
 		}
 		final ArrayList<Object> list = new ArrayList<>(c.size());
-		for (Object object : list) {
+		for (Object object : c) {
 			list.add(JSONUtil.wrap(object, ignoreNullValue));
 		}
 		return rawList.addAll(index, list);
@@ -582,7 +592,7 @@ public class JSONArray extends JSONGetter<Integer> implements JSON, List<Object>
 	 * @param ignoreError 是否忽略转换错误
 	 * @return 实体类对象
 	 */
-	public Object[] toArray(Class<?> arrayClass, boolean ignoreError) {
+	public Object toArray(Class<?> arrayClass, boolean ignoreError) {
 		return InternalJSONUtil.toArray(this, arrayClass, ignoreError);
 	}
 

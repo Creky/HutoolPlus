@@ -5,13 +5,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.net.URLStreamHandler;
 import java.nio.charset.Charset;
+import java.util.jar.JarFile;
 
 import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.io.FileUtil;
@@ -62,6 +65,18 @@ public class URLUtil {
 	 * @return URL对象
 	 */
 	public static URL url(String url) {
+		return url(url, null);
+	}
+
+	/**
+	 * 通过一个字符串形式的URL地址创建URL对象
+	 * 
+	 * @param url URL
+	 * @param handler {@link URLStreamHandler}
+	 * @return URL对象
+	 * @since 4.1.1
+	 */
+	public static URL url(String url, URLStreamHandler handler) {
 		Assert.notNull(url, "URL must not be null");
 
 		// 兼容Spring的ClassPath路径
@@ -71,7 +86,7 @@ public class URLUtil {
 		}
 
 		try {
-			return new URL(url);
+			return new URL(null, url, handler);
 		} catch (MalformedURLException e) {
 			// 尝试文件路径
 			try {
@@ -179,7 +194,7 @@ public class URLUtil {
 			throw new UtilException(e);
 		}
 	}
-	
+
 	/**
 	 * 编码URL，默认使用UTF-8编码<br>
 	 * 将需要转换的内容（ASCII码形式之外的内容），用十六进制表示法转换出来，并在之前加上%开头。
@@ -189,7 +204,7 @@ public class URLUtil {
 	 * @exception UtilException UnsupportedEncodingException
 	 * @since 3.1.2
 	 */
-	public static String encode(String url) throws UtilException{
+	public static String encode(String url) throws UtilException {
 		return encode(url, CharsetUtil.UTF_8);
 	}
 
@@ -202,14 +217,14 @@ public class URLUtil {
 	 * @return 编码后的URL
 	 * @exception UtilException UnsupportedEncodingException
 	 */
-	public static String encode(String url, String charset) throws UtilException{
+	public static String encode(String url, String charset) throws UtilException {
 		try {
 			return URLEncoder.encode(url, charset);
 		} catch (UnsupportedEncodingException e) {
 			throw new UtilException(e);
 		}
 	}
-	
+
 	/**
 	 * 解码URL<br>
 	 * 将%开头的16进制表示的内容解码。
@@ -219,7 +234,7 @@ public class URLUtil {
 	 * @exception UtilException UnsupportedEncodingException
 	 * @since 3.1.2
 	 */
-	public static String decode(String url) throws UtilException{
+	public static String decode(String url) throws UtilException {
 		return decode(url, CharsetUtil.UTF_8);
 	}
 
@@ -232,7 +247,7 @@ public class URLUtil {
 	 * @return 解码后的URL
 	 * @exception UtilException UnsupportedEncodingException
 	 */
-	public static String decode(String url, String charset) throws UtilException{
+	public static String decode(String url, String charset) throws UtilException {
 		try {
 			return URLDecoder.decode(url, charset);
 		} catch (UnsupportedEncodingException e) {
@@ -267,6 +282,10 @@ public class URLUtil {
 	 * @since 3.0.8
 	 */
 	public static String getDecodedPath(URL url) {
+		if (null == url) {
+			return null;
+		}
+
 		String path = null;
 		try {
 			// URL对象的getPath方法对于包含中文或空格的问题
@@ -324,10 +343,10 @@ public class URLUtil {
 				URL_PROTOCOL_VFSFILE.equals(protocol) || //
 				URL_PROTOCOL_VFS.equals(protocol));
 	}
-	
+
 	/**
-	 * 提供的URL是否为jar包URL
-	 * 协议包括： "jar", "zip", "vfszip" 或 "wsjar".
+	 * 提供的URL是否为jar包URL 协议包括： "jar", "zip", "vfszip" 或 "wsjar".
+	 * 
 	 * @param url {@link URL}
 	 * @return 是否为jar包URL
 	 */
@@ -340,8 +359,8 @@ public class URLUtil {
 	}
 
 	/**
-	 * 提供的URL是否为Jar文件URL
-	 * 判断依据为file协议且扩展名为.jar
+	 * 提供的URL是否为Jar文件URL 判断依据为file协议且扩展名为.jar
+	 * 
 	 * @param url the URL to check
 	 * @return whether the URL has been identified as a JAR file URL
 	 * @since 4.1
@@ -353,6 +372,7 @@ public class URLUtil {
 
 	/**
 	 * 从URL中获取流
+	 * 
 	 * @param url {@link URL}
 	 * @return InputStream流
 	 * @since 3.2.1
@@ -365,7 +385,7 @@ public class URLUtil {
 			throw new IORuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * 获得Reader
 	 * 
@@ -374,7 +394,50 @@ public class URLUtil {
 	 * @return {@link BufferedReader}
 	 * @since 3.2.1
 	 */
-	public static BufferedReader getReader(URL url, Charset charset){
+	public static BufferedReader getReader(URL url, Charset charset) {
 		return IoUtil.getReader(getStream(url), charset);
+	}
+
+	/**
+	 * 从URL中获取JarFile
+	 * 
+	 * @param url URL
+	 * @return JarFile
+	 * @since 4.1.5
+	 */
+	public static JarFile getJarFile(URL url) {
+		try {
+			JarURLConnection urlConnection = (JarURLConnection) url.openConnection();
+			return urlConnection.getJarFile();
+		} catch (IOException e) {
+			throw new IORuntimeException(e);
+		}
+	}
+	
+	/**
+	 * 标准化URL字符串，包括：
+	 * <pre>
+	 * 1. 多个/替换为一个
+	 * </pre>
+	 * 
+	 * @param url URL字符串
+	 * @return 标准化后的URL字符串
+	 */
+	public static String normalize (String url) {
+		if(StrUtil.isBlank(url)) {
+			return url;
+		}
+		int sepIndex = url.indexOf("://");
+		String pre;
+		String body;
+		if(sepIndex > 0) {
+			pre = StrUtil.subPre(url, sepIndex + 3);
+			body = StrUtil.subSuf(url, sepIndex + 3);
+		}else {
+			pre = "http://";
+			body = url;
+		}
+		body = body.replaceAll("//+", "/");
+		return pre + body;
 	}
 }

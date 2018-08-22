@@ -244,6 +244,46 @@ public class StrUtil {
 	}
 
 	/**
+	 * 如果字符串是<code>null</code>或者&quot;&quot;，则返回指定默认字符串，否则返回字符串本身。
+	 * 
+	 * <pre>
+	 * emptyToDefault(null, &quot;default&quot;)  = &quot;default&quot;
+	 * emptyToDefault(&quot;&quot;, &quot;default&quot;)    = &quot;default&quot;
+	 * emptyToDefault(&quot;  &quot;, &quot;default&quot;)  = &quot;  &quot;
+	 * emptyToDefault(&quot;bat&quot;, &quot;default&quot;) = &quot;bat&quot;
+	 * </pre>
+	 * 
+	 * @param str 要转换的字符串
+	 * @param defaultStr 默认字符串
+	 * 
+	 * @return 字符串本身或指定的默认字符串
+	 * @since 4.1.0
+	 */
+	public static String emptyToDefault(CharSequence str, String defaultStr) {
+		return isEmpty(str) ? defaultStr : str.toString();
+	}
+
+	/**
+	 * 如果字符串是<code>null</code>或者&quot;&quot;或者空白，则返回指定默认字符串，否则返回字符串本身。
+	 * 
+	 * <pre>
+	 * emptyToDefault(null, &quot;default&quot;)  = &quot;default&quot;
+	 * emptyToDefault(&quot;&quot;, &quot;default&quot;)    = &quot;default&quot;
+	 * emptyToDefault(&quot;  &quot;, &quot;default&quot;)  = &quot;default&quot;
+	 * emptyToDefault(&quot;bat&quot;, &quot;default&quot;) = &quot;bat&quot;
+	 * </pre>
+	 * 
+	 * @param str 要转换的字符串
+	 * @param defaultStr 默认字符串
+	 * 
+	 * @return 字符串本身或指定的默认字符串
+	 * @since 4.1.0
+	 */
+	public static String blankToDefault(CharSequence str, String defaultStr) {
+		return isBlank(str) ? defaultStr : str.toString();
+	}
+
+	/**
 	 * 当给定字符串为空字符串时，转换为<code>null</code>
 	 * 
 	 * @param str 被转换的字符串
@@ -1942,8 +1982,12 @@ public class StrUtil {
 		}
 
 		String template2 = template.toString();
+		String value;
 		for (Entry<?, ?> entry : map.entrySet()) {
-			template2 = template2.replace("{" + entry.getKey() + "}", utf8Str(entry.getValue()));
+			value = utf8Str(entry.getValue());
+			if (null != value) {
+				template2 = replace(template2, "{" + entry.getKey() + "}", value);
+			}
 		}
 		return template2;
 	}
@@ -2151,6 +2195,17 @@ public class StrUtil {
 	}
 
 	/**
+	 * 调用对象的toString方法，null会返回“null”
+	 * 
+	 * @param obj 对象
+	 * @return 字符串
+	 * @since 4.1.3
+	 */
+	public static String toString(Object obj) {
+		return null == obj ? "null" : obj.toString();
+	}
+
+	/**
 	 * 字符串转换为byteBuffer
 	 * 
 	 * @param str 字符串
@@ -2173,10 +2228,11 @@ public class StrUtil {
 	public static String join(CharSequence conjunction, Object... objs) {
 		return ArrayUtil.join(objs, conjunction);
 	}
-	
+
 	/**
 	 * 将驼峰式命名的字符串转换为下划线方式。如果转换前的驼峰式命名的字符串为空，则返回空字符串。<br>
 	 * 例如：
+	 * 
 	 * <pre>
 	 * HelloWorld=》hello_world
 	 * Hello_World=》hello_world
@@ -2210,32 +2266,32 @@ public class StrUtil {
 			c = str.charAt(i);
 			final Character preChar = (i > 0) ? str.charAt(i - 1) : null;
 			if (Character.isUpperCase(c)) {
-				//遇到大写字母处理
+				// 遇到大写字母处理
 				final Character nextChar = (i < str.length() - 1) ? str.charAt(i + 1) : null;
 				if (null != preChar && Character.isUpperCase(preChar)) {
-					//前一个字符为大写，则按照一个词对待
+					// 前一个字符为大写，则按照一个词对待
 					sb.append(c);
 				} else if (null != nextChar && Character.isUpperCase(nextChar)) {
-					//后一个为大写字母，按照一个词对待
-					if(null != preChar && symbol != preChar) {
-						//前一个是非大写时按照新词对待，加连接符
+					// 后一个为大写字母，按照一个词对待
+					if (null != preChar && symbol != preChar) {
+						// 前一个是非大写时按照新词对待，加连接符
 						sb.append(symbol);
 					}
 					sb.append(c);
 				} else {
-					//前后都为非大写按照新词对待
-					if (null != preChar &&symbol != preChar) {
-						//前一个非连接符，补充连接符
+					// 前后都为非大写按照新词对待
+					if (null != preChar && symbol != preChar) {
+						// 前一个非连接符，补充连接符
 						sb.append(symbol);
 					}
 					sb.append(Character.toLowerCase(c));
 				}
 			} else {
-				if(sb.length() > 0 && Character.isUpperCase(sb.charAt(sb.length() -1)) && symbol != c) {
-					//当结果中前一个字母为大写，当前为小写，说明此字符为新词开始（连接符也表示新词）
+				if (sb.length() > 0 && Character.isUpperCase(sb.charAt(sb.length() - 1)) && symbol != c) {
+					// 当结果中前一个字母为大写，当前为小写，说明此字符为新词开始（连接符也表示新词）
 					sb.append(symbol);
 				}
-				//小写或符号
+				// 小写或符号
 				sb.append(c);
 			}
 		}
@@ -3317,7 +3373,7 @@ public class StrUtil {
 	 * 替换字符串中的指定字符串
 	 * 
 	 * @param str 字符串
-	 * @param fromIndex 开始位置
+	 * @param fromIndex 开始位置（包括）
 	 * @param searchStr 被查找的字符串
 	 * @param replacement 被替换的字符串
 	 * @param ignoreCase 是否忽略大小写
@@ -3347,7 +3403,7 @@ public class StrUtil {
 
 		int preIndex = fromIndex;
 		int index = fromIndex;
-		while ((index = indexOf(str, searchStr, preIndex, ignoreCase)) > 0) {
+		while ((index = indexOf(str, searchStr, preIndex, ignoreCase)) > -1) {
 			result.append(str.subSequence(preIndex, index));
 			result.append(replacement);
 			preIndex = index + searchStrLength;
@@ -3551,5 +3607,21 @@ public class StrUtil {
 	 */
 	public static String uuid() {
 		return RandomUtil.randomUUID();
+	}
+
+	/**
+	 * 连接多个字符串为一个
+	 * 
+	 * @param isNullToEmpty 是否null转为""
+	 * @param strs 字符串数组
+	 * @return 连接后的字符串
+	 * @since 4.1.0
+	 */
+	public static String concat(boolean isNullToEmpty, CharSequence... strs) {
+		final StrBuilder sb = new StrBuilder();
+		for (CharSequence str : strs) {
+			sb.append(isNullToEmpty ? nullToEmpty(str) : str);
+		}
+		return sb.toString();
 	}
 }

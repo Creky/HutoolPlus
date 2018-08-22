@@ -1,5 +1,6 @@
 package cn.hutool.core.util;
 
+import java.awt.Color;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.NoSuchAlgorithmException;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,11 +29,11 @@ import cn.hutool.core.lang.WeightRandom.WeightObj;
 public class RandomUtil {
 
 	/** 用于随机选的数字 */
-	private static final String BASE_NUMBER = "0123456789";
+	public static final String BASE_NUMBER = "0123456789";
 	/** 用于随机选的字符 */
-	private static final String BASE_CHAR = "abcdefghijklmnopqrstuvwxyz";
+	public static final String BASE_CHAR = "abcdefghijklmnopqrstuvwxyz";
 	/** 用于随机选的字符和数字 */
-	private static final String BASE_CHAR_NUMBER = BASE_CHAR + BASE_NUMBER;
+	public static final String BASE_CHAR_NUMBER = BASE_CHAR + BASE_NUMBER;
 
 	/**
 	 * 获取随机数生成器对象<br>
@@ -336,6 +338,17 @@ public class RandomUtil {
 	public static String randomString(int length) {
 		return randomString(BASE_CHAR_NUMBER, length);
 	}
+	
+	/**
+	 * 获得一个随机的字符串（只包含数字和大写字符）
+	 * 
+	 * @param length 字符串的长度
+	 * @return 随机字符串
+	 * @since 4.0.13
+	 */
+	public static String randomStringUpper(int length) {
+		return randomString(BASE_CHAR_NUMBER, length).toUpperCase();
+	}
 
 	/**
 	 * 获得一个只包含数字的字符串
@@ -397,6 +410,17 @@ public class RandomUtil {
 	 */
 	public static char randomChar(String baseString) {
 		return baseString.charAt(getRandom().nextInt(baseString.length()));
+	}
+	
+	/**
+	 * 生成随机颜色
+	 * 
+	 * @return 随机颜色
+	 * @since 4.1.5
+	 */
+	public static Color randomColor() {
+		final Random random = getRandom();
+		return new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255));
 	}
 
 	/**

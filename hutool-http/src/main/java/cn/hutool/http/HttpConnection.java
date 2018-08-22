@@ -25,6 +25,7 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
+import cn.hutool.http.ssl.AndroidSupportSSLFactory;
 import cn.hutool.http.ssl.SSLSocketFactoryBuilder;
 import cn.hutool.http.ssl.TrustAnyHostnameVerifier;
 import cn.hutool.log.Log;
@@ -143,7 +144,7 @@ public class HttpConnection {
 		this.proxy = proxy;
 
 		try {
-			this.conn = HttpUtil.isHttps(urlStr) ? openHttps(hostnameVerifier, ssf) : openHttp();
+			this.conn = openHttp(hostnameVerifier, ssf);
 		} catch (Exception e) {
 			throw new HttpException(e.getMessage(), e);
 		}
@@ -185,7 +186,7 @@ public class HttpConnection {
 		// this.header(GlobalHeaders.INSTANCE.headers, true);
 
 		// Cookie
-		setCookie(CookiePool.get(this.url.getHost()));
+		// setCookie(CookiePool.get(this.url.getHost()));
 
 		return this;
 	}
@@ -386,7 +387,7 @@ public class HttpConnection {
 	 */
 	public HttpConnection setCookie(String cookie) {
 		if (cookie != null) {
-			log.debug("Cookie: {}", cookie);
+			log.debug("With Cookie: {}", cookie);
 			header(Header.COOKIE, cookie, true);
 		}
 		return this;
@@ -448,8 +449,6 @@ public class HttpConnection {
 	 * @throws IOException IO异常
 	 */
 	public InputStream getInputStream() throws IOException {
-		storeCookie();
-
 		if (null != this.conn) {
 			return this.conn.getInputStream();
 		}
@@ -463,8 +462,6 @@ public class HttpConnection {
 	 * @throws IOException IO异常
 	 */
 	public InputStream getErrorStream() throws IOException {
-		storeCookie();
-
 		if (null != this.conn) {
 			return this.conn.getErrorStream();
 		}
@@ -544,26 +541,33 @@ public class HttpConnection {
 
 	// --------------------------------------------------------------- Private Method start
 	/**
-	 * 初始化http请求参数
-	 */
-	private HttpURLConnection openHttp() throws IOException {
-		return (HttpURLConnection) openConnection();
-	}
-
-	/**
-	 * 初始化https请求参数
+	 * 初始化http或https请求参数<br>
+	 * 有些时候htts请求会出现com.sun.net.ssl.internal.www.protocol.https.HttpsURLConnectionOldImpl的实现，此为sun内部api，按照普通http请求处理
 	 * 
-	 * @param hostnameVerifier 域名验证器
-	 * @param ssf SSLSocketFactory
+	 * @param hostnameVerifier 域名验证器，非https传入null
+	 * @param ssf SSLSocketFactory，非https传入null
+	 * @return {@link HttpURLConnection}，https返回{@link HttpsURLConnection}
 	 */
-	private HttpsURLConnection openHttps(HostnameVerifier hostnameVerifier, SSLSocketFactory ssf) throws IOException, NoSuchAlgorithmException, KeyManagementException {
-		final HttpsURLConnection httpsURLConnection = (HttpsURLConnection) openConnection();
+	private HttpURLConnection openHttp(HostnameVerifier hostnameVerifier, SSLSocketFactory ssf) throws IOException, NoSuchAlgorithmException, KeyManagementException {
+		final HttpURLConnection conn = (HttpURLConnection) openConnection();
 
-		// 验证域
-		httpsURLConnection.setHostnameVerifier(null != hostnameVerifier ? hostnameVerifier : new TrustAnyHostnameVerifier());
-		httpsURLConnection.setSSLSocketFactory(null != ssf ? ssf : SSLSocketFactoryBuilder.create().build());
+		if (conn instanceof HttpsURLConnection) {
+			// Https请求
+			final HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
+			// 验证域
+			httpsConn.setHostnameVerifier(null != hostnameVerifier ? hostnameVerifier : new TrustAnyHostnameVerifier());
+			if (null == ssf) {
+				if (StrUtil.equalsIgnoreCase("dalvik", System.getProperty("java.vm.name"))) {
+					// 兼容android低版本SSL连接
+					ssf = new AndroidSupportSSLFactory();
+				} else {
+					ssf = SSLSocketFactoryBuilder.create().build();
+				}
+			}
+			httpsConn.setSSLSocketFactory(ssf);
+		}
 
-		return httpsURLConnection;
+		return conn;
 	}
 
 	/**
@@ -574,17 +578,6 @@ public class HttpConnection {
 	 */
 	private URLConnection openConnection() throws IOException {
 		return (null == this.proxy) ? url.openConnection() : url.openConnection(this.proxy);
-	}
-
-	/**
-	 * 存储服务器返回的Cookie到本地
-	 */
-	private void storeCookie() {
-		final String setCookie = header(Header.SET_COOKIE);
-		if (StrUtil.isBlank(setCookie) == false) {
-			log.debug("Set cookie: [{}]", setCookie);
-			CookiePool.put(url.getHost(), setCookie);
-		}
 	}
 	// --------------------------------------------------------------- Private Method end
 }

@@ -2,6 +2,7 @@ package cn.hutool.json;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.util.Calendar;
 import java.util.Collection;
@@ -16,7 +17,6 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.convert.ConvertException;
 import cn.hutool.core.convert.ConverterRegistry;
 import cn.hutool.core.convert.impl.CollectionConverter;
-import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -231,7 +231,6 @@ final class InternalJSONUtil {
 				if(null == value) {
 					value = jsonObject.get(StrUtil.toUnderlineCase(key));
 				}
-				
 				return jsonConvert(valueType, value, ignoreError);
 			}
 
@@ -256,11 +255,12 @@ final class InternalJSONUtil {
 	 * @param ignoreError 是否忽略转换异常
 	 * @return 数组对象
 	 */
-	protected static Object[] toArray(final JSONArray jsonArray, Class<?> arrayClass, boolean ignoreError) {
+	protected static Object toArray(final JSONArray jsonArray, Class<?> arrayClass, boolean ignoreError) {
 		final Class<?> componentType = arrayClass.isArray() ? arrayClass.getComponentType() : arrayClass;
-		final Object[] objArray = ArrayUtil.newArray(componentType, jsonArray.size());
-		for (int i = 0; i < objArray.length; i++) {
-			objArray[i] = jsonConvert(componentType, jsonArray.get(i), ignoreError);
+		final int size = jsonArray.size();
+		final Object objArray = Array.newInstance(componentType, size);
+		for (int i = 0; i < size; i++) {
+			Array.set(objArray, i, jsonConvert(componentType, jsonArray.get(i), ignoreError));
 		}
 
 		return objArray;
@@ -292,20 +292,20 @@ final class InternalJSONUtil {
 			// 目标为JSON格式
 			return JSONUtil.parse(value);
 		}
-
+		
 		Object targetValue = null;
 		// 非标准转换格式
 		if (value instanceof JSONObject) {
-			targetValue = ((JSONObject) value).toBean(rowType, ignoreError);
+			targetValue = ((JSONObject) value).toBean(type, ignoreError);
 		} else if (value instanceof JSONArray) {
 			if (rowType.isArray()) {
 				// 目标为数组
 				targetValue = ((JSONArray) value).toArray(rowType, ignoreError);
 			} else {
-				targetValue = (new CollectionConverter(rowType, TypeUtil.getTypeArgument(type))).convert(value, null);
+				targetValue = (new CollectionConverter(type, TypeUtil.getTypeArgument(type))).convert(value, null);
 			}
 		}
-
+		
 		// 标准格式转换
 		if (null == targetValue) {
 			try {
@@ -317,7 +317,7 @@ final class InternalJSONUtil {
 				throw e;
 			}
 		}
-
+		
 		if (null == targetValue && false == ignoreError) {
 			if (value instanceof CharSequence && StrUtil.isBlank((CharSequence) value)) {
 				// 对于传入空字符串的情况，如果转换的目标对象是非字符串或非原书类型，转换器会返回false。

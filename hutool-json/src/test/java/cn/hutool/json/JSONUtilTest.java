@@ -79,4 +79,25 @@ public class JSONUtilTest {
 		Price price = JSONUtil.toBean(json, Price.class);
 		Assert.assertEquals("N", price.getADT().get(0).get(0).getBookingCode().get(0));
 	}
+
+	@Test
+	public void putByPathTest() {
+		JSONObject json = new JSONObject();
+		json.putByPath("aa.bb", "BB");
+		Assert.assertEquals("{\"aa\":{\"bb\":\"BB\"}}", json.toString());
+}
+
+	@Test
+	public void getStrTest() {
+		String html = "{\"name\":\"Something must have been changed since you leave\"}";
+		JSONObject jsonObject = JSONUtil.parseObj(html);
+		Assert.assertEquals("Something must have been changed since you leave", jsonObject.getStr("name"));
+	}
+
+	@Test
+	public void getStrTest2() {
+		String html = "{\"name\":\"Something\\u00a0must have been changed since you leave\"}";
+		JSONObject jsonObject = JSONUtil.parseObj(html);
+		Assert.assertEquals("Something\\u00a0must\\u00a0have\\u00a0been\\u00a0changed\\u00a0since\\u00a0you\\u00a0leave", jsonObject.getStr("name"));
+	}
 }

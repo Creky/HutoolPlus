@@ -44,12 +44,14 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      * 是否忽略读取Http响应体
      */
     private boolean ignoreBody;
+	/** 从响应中获取的编码 */
+	private Charset charsetFromResponse;
 
     /**
      * 构造
      *
      * @param httpConnection {@link HttpConnection}
-     * @param charset        编码
+	 * @param charset 编码，从请求编码中获取默认编码
      * @param isAsync        是否异步
      * @param isIgnoreBody   是否忽略读取响应体
      * @since 3.1.2
@@ -118,13 +120,40 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      * @return Cookie列表
      * @since 3.1.1
      */
-    public List<HttpCookie> getCookie() {
-        final String cookieStr = getCookieStr();
-        if (StrUtil.isNotBlank(cookieStr)) {
-            return HttpCookie.parse(cookieStr);
-        }
+	public List<HttpCookie> getCookies(){
+		return HttpRequest.cookieManager.getCookieStore().getCookies();
+	}
+	
+	/**
+	 * 获取Cookie
+	 * 
+	 * @param name Cookie名
+	 * @return {@link HttpCookie}
+	 * @since 4.1.4
+	 */
+	public HttpCookie getCookie(String name) {
+		List<HttpCookie> cookie = getCookies();
+		if(null != cookie) {
+			for (HttpCookie httpCookie : cookie) {
+				if(httpCookie.getName().equals(name)) {
+					return httpCookie;
+				}
+			}
+		}
         return null;
     }
+	
+	/**
+	 * 获取Cookie值
+	 * 
+	 * @param name Cookie名
+	 * @return Cookie值
+	 * @since 4.1.4
+	 */
+	public String getCookieValue(String name) {
+		HttpCookie cookie = getCookie(name);
+		return (null == cookie) ? null : cookie.getValue();
+	}
     // ---------------------------------------------------------------- Http Response Header end
 
     // ---------------------------------------------------------------- Body start
@@ -163,7 +192,7 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      */
     public String body() throws HttpException {
         try {
-            return HttpUtil.getString(bodyBytes(), this.charset, null == this.charset);
+			return HttpUtil.getString(bodyBytes(), this.charset, null == this.charsetFromResponse);
         } catch (IOException e) {
             throw new HttpException(e);
         }
@@ -185,7 +214,7 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
             throw new NullPointerException("[out] is null!");
         }
         try {
-            return IoUtil.copyByNIO(in, out, IoUtil.DEFAULT_BUFFER_SIZE, streamProgress);
+			return IoUtil.copyByNIO(bodyStream(), out, IoUtil.DEFAULT_BUFFER_SIZE, streamProgress);
         } finally {
             IoUtil.close(this);
             if (isCloseOut) {
@@ -263,6 +292,7 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
     @Override
     public void close() {
         IoUtil.close(this.in);
+		this.in = null;
         //关闭连接
         this.httpConnection.disconnect();
     }
@@ -300,6 +330,7 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
             this.status = httpConnection.responseCode();
             this.headers = httpConnection.headers();
             final Charset charset = httpConnection.getCharset();
+			this.charsetFromResponse = charset;
             if (null != charset) {
                 this.charset = charset;
             }
