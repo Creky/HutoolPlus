@@ -3,4 +3,5 @@ description = 'hutool-aop'
 dependencies {
   compile project(':hutool-core')
   compile project(':hutool-log')
+  compileOnly 'cglib:cglib:3.2.7'
 }
