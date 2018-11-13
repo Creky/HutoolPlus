@@ -44,14 +44,16 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      * 是否忽略读取Http响应体
      */
     private boolean ignoreBody;
-	/** 从响应中获取的编码 */
-	private Charset charsetFromResponse;
+    /**
+     * 从响应中获取的编码
+     */
+    private Charset charsetFromResponse;
 
     /**
      * 构造
      *
      * @param httpConnection {@link HttpConnection}
-	 * @param charset 编码，从请求编码中获取默认编码
+     * @param charset        编码，从请求编码中获取默认编码
      * @param isAsync        是否异步
      * @param isIgnoreBody   是否忽略读取响应体
      * @since 3.1.2
@@ -70,27 +72,27 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      * @return 状态码
      */
     public int getStatus() {
-		return this.status;
+        return this.status;
     }
 
     /**
-	 * 请求是否成功，判断依据为：状态码范围在200~299内。
-	 * @return 是否成功请求
-	 * @since 4.1.9
-	 */
-	public boolean isOk() {
-		return this.status >= 200 && this.status < 300;
-	}
-	
-	/**
+     * 请求是否成功，判断依据为：状态码范围在200~299内。
+     *
+     * @return 是否成功请求
+     * @since 4.1.9
+     */
+    public boolean isOk() {
+        return this.status >= 200 && this.status < 300;
+    }
+
+    /**
      * 同步<br>
      * 如果为异步状态，则暂时不读取服务器中响应的内容，而是持有Http链接的{@link InputStream}。<br>
      * 当调用此方法时，异步状态转为同步状态，此时从Http链接流中读取body内容并暂存在内容中。如果已经是同步状态，则不进行任何操作。
      *
      * @return this
-     * @throws HttpException IO异常
      */
-    public HttpResponse sync() throws HttpException {
+    public HttpResponse sync() {
         return this.isAsync ? forceSync() : this;
     }
 
@@ -129,40 +131,40 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      * @return Cookie列表
      * @since 3.1.1
      */
-	public List<HttpCookie> getCookies(){
-		return HttpRequest.cookieManager.getCookieStore().getCookies();
-	}
-	
-	/**
-	 * 获取Cookie
-	 * 
-	 * @param name Cookie名
-	 * @return {@link HttpCookie}
-	 * @since 4.1.4
-	 */
-	public HttpCookie getCookie(String name) {
-		List<HttpCookie> cookie = getCookies();
-		if(null != cookie) {
-			for (HttpCookie httpCookie : cookie) {
-				if(httpCookie.getName().equals(name)) {
-					return httpCookie;
-				}
-			}
-		}
+    public List<HttpCookie> getCookies() {
+        return HttpRequest.cookieManager.getCookieStore().getCookies();
+    }
+
+    /**
+     * 获取Cookie
+     *
+     * @param name Cookie名
+     * @return {@link HttpCookie}
+     * @since 4.1.4
+     */
+    public HttpCookie getCookie(String name) {
+        List<HttpCookie> cookie = getCookies();
+        if (null != cookie) {
+            for (HttpCookie httpCookie : cookie) {
+                if (httpCookie.getName().equals(name)) {
+                    return httpCookie;
+                }
+            }
+        }
         return null;
     }
-	
-	/**
-	 * 获取Cookie值
-	 * 
-	 * @param name Cookie名
-	 * @return Cookie值
-	 * @since 4.1.4
-	 */
-	public String getCookieValue(String name) {
-		HttpCookie cookie = getCookie(name);
-		return (null == cookie) ? null : cookie.getValue();
-	}
+
+    /**
+     * 获取Cookie值
+     *
+     * @param name Cookie名
+     * @return Cookie值
+     * @since 4.1.4
+     */
+    public String getCookieValue(String name) {
+        HttpCookie cookie = getCookie(name);
+        return (null == cookie) ? null : cookie.getValue();
+    }
     // ---------------------------------------------------------------- Http Response Header end
 
     // ---------------------------------------------------------------- Body start
@@ -197,13 +199,13 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      * 获取响应主体
      *
      * @return String
-     * @throws HttpException 包装IO异常
      */
-    public String body() throws HttpException {
+    public String body() {
         try {
-			return HttpUtil.getString(bodyBytes(), this.charset, null == this.charsetFromResponse);
+            return HttpUtil.getString(bodyBytes(), this.charset, null == this.charsetFromResponse);
         } catch (IOException e) {
-            throw new HttpException(e);
+            logger.error("Retrieve body failed.", e);
+            return null;
         }
     }
 
@@ -223,7 +225,7 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
             throw new NullPointerException("[out] is null!");
         }
         try {
-			return IoUtil.copyByNIO(bodyStream(), out, IoUtil.DEFAULT_BUFFER_SIZE, streamProgress);
+            return IoUtil.copyByNIO(bodyStream(), out, IoUtil.DEFAULT_BUFFER_SIZE, streamProgress);
         } finally {
             IoUtil.close(this);
             if (isCloseOut) {
@@ -265,7 +267,8 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
             out = FileUtil.getOutputStream(destFile);
             return writeBody(out, false, streamProgress);
         } catch (IORuntimeException e) {
-            throw new HttpException(e);
+            logger.error("Write stream failed.", e);
+            return -1;
         } finally {
             IoUtil.close(out);
         }
@@ -301,7 +304,7 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
     @Override
     public void close() {
         IoUtil.close(this.in);
-		this.in = null;
+        this.in = null;
         //关闭连接
         this.httpConnection.disconnect();
     }
@@ -332,21 +335,23 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      * </pre>
      *
      * @return this
-     * @throws HttpException IO异常
      */
-    private HttpResponse init() throws HttpException {
+    private HttpResponse init() {
+        if (httpConnection == null) {
+            return null;
+        }
         try {
             this.status = httpConnection.responseCode();
             this.headers = httpConnection.headers();
             final Charset charset = httpConnection.getCharset();
-			this.charsetFromResponse = charset;
+            this.charsetFromResponse = charset;
             if (null != charset) {
                 this.charset = charset;
             }
 
             this.in = (this.status < HttpStatus.HTTP_BAD_REQUEST) ? httpConnection.getInputStream() : httpConnection.getErrorStream();
         } catch (IOException e) {
-            logger.error("Exception occured:", e);
+            logger.error("Exception occurred:", e);
 //            if (e instanceof FileNotFoundException) {
 //                //服务器无返回内容，忽略之
 //            } else {
@@ -415,7 +420,7 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
             if (e.getCause() instanceof FileNotFoundException) {
                 //服务器无返回内容，忽略之
             } else {
-                throw new HttpException(e);
+                logger.error("IO exception", e);
             }
         } finally {
             if (this.isAsync) {

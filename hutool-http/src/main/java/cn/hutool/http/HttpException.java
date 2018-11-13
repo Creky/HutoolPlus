@@ -6,7 +6,7 @@ import cn.hutool.core.util.StrUtil;
  *HTTP异常
  * @author xiaoleilu
  */
-public class HttpException extends RuntimeException{
+public class HttpException extends Exception{
 	private static final long serialVersionUID = 8247610319171014183L;
 
 	public HttpException(Throwable e) {
