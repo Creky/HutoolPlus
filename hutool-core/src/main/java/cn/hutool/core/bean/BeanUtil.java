@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -439,7 +440,7 @@ public class BeanUtil {
 	 * @return Map
 	 */
 	public static Map<String, Object> beanToMap(Object bean, boolean isToUnderlineCase, boolean ignoreNullValue) {
-		return beanToMap(bean, new HashMap<String, Object>(), isToUnderlineCase, ignoreNullValue);
+		return beanToMap(bean, new LinkedHashMap<String, Object>(), isToUnderlineCase, ignoreNullValue);
 	}
 
 	/**
@@ -538,6 +539,17 @@ public class BeanUtil {
 	public static void copyProperties(Object source, Object target, String... ignoreProperties) {
 		copyProperties(source, target, CopyOptions.create().setIgnoreProperties(ignoreProperties));
 	}
+	
+	/**
+	 * 复制Bean对象属性<br>
+	 * 
+	 * @param source 源Bean对象
+	 * @param target 目标Bean对象
+	 * @param ignoreCase 是否忽略大小写
+	 */
+	public static void copyProperties(Object source, Object target, boolean ignoreCase) {
+		BeanCopier.create(source, target, CopyOptions.create().setIgnoreCase(ignoreCase)).copy();
+	}
 
 	/**
 	 * 复制Bean对象属性<br>
@@ -547,20 +559,7 @@ public class BeanUtil {
 	 * @param target 目标Bean对象
 	 * @param copyOptions 拷贝选项，见 {@link CopyOptions}
 	 */
-	public static void copyProperties(final Object source, Object target, CopyOptions copyOptions) {
-		copyProperties(source, target, false, copyOptions);
-	}
-
-	/**
-	 * 复制Bean对象属性<br>
-	 * 限制类用于限制拷贝的属性，例如一个类我只想复制其父类的一些属性，就可以将CopyOptions.editable设置为父类
-	 * 
-	 * @param source 源Bean对象
-	 * @param target 目标Bean对象
-	 * @param ignoreCase 是否忽略大小写
-	 * @param copyOptions 拷贝选项，见 {@link CopyOptions}
-	 */
-	public static void copyProperties(final Object source, Object target, boolean ignoreCase, CopyOptions copyOptions) {
+	public static void copyProperties(Object source, Object target, CopyOptions copyOptions) {
 		if (null == copyOptions) {
 			copyOptions = new CopyOptions();
 		}
@@ -618,4 +617,41 @@ public class BeanUtil {
 		return bean;
 	}
 
+	/**
+	 * 判断Bean是否为空对象，空对象表示本身为<code>null</code>或者所有属性都为<code>null</code>
+	 *
+	 * @param bean Bean对象
+	 * @return 是否为空，<code>true</code> - 空 / <code>false</code> - 非空
+	 * @since 4.1.10
+	 */
+	public static boolean isEmpty(Object bean) {
+		if (null != bean) {
+			for (Field field : ReflectUtil.getFields(bean.getClass())) {
+				if (null != ReflectUtil.getFieldValue(bean, field)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * 判断Bean是否包含值为<code>null</code>的属性<br>
+	 * 对象本身为<code>null</code>也返回true
+	 *
+	 * @param bean Bean对象
+	 * @return 是否包含值为<code>null</code>的属性，<code>true</code> - 包含 / <code>false</code> - 不包含
+	 * @since 4.1.10
+	 */
+	public static boolean hasNullField(Object bean) {
+		if (null == bean) {
+			return true;
+		}
+		for (Field field : ReflectUtil.getFields(bean.getClass())) {
+			if (null == ReflectUtil.getFieldValue(bean, field)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

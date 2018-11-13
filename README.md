@@ -5,19 +5,30 @@
 	<strong>A set of tools that keep Java sweet.</strong>
 </p>
 <p align="center">
-	<a href="http://search.maven.org/#artifactdetails%7Ccn.hutool%7Chutool-all%7C4.1.8%7Cjar">
-		<img src="https://img.shields.io/badge/version-4.1.8-blue.svg" >
+	<a target="_blank" href="https://search.maven.org/artifact/cn.hutool/hutool-all/4.1.20/jar">
+		<img src="https://img.shields.io/badge/version-4.1.20-blue.svg" ></img>
 	</a>
-	<a href="http://www.apache.org/licenses/LICENSE-2.0.html">
-		<img src="http://img.shields.io/:license-apache-blue.svg" >
+	<a target="_blank" href="http://www.apache.org/licenses/LICENSE-2.0.html">
+		<img src="http://img.shields.io/:license-apache-blue.svg" ></img>
 	</a>
-	<a>
-		<img src="https://img.shields.io/badge/JDK-1.7+-green.svg" >
+	<a target="_blank" href="https://www.oracle.com/technetwork/java/javase/downloads/index.html">
+		<img src="https://img.shields.io/badge/JDK-1.7+-green.svg" ></img>
+	</a>
+	<a target="_blank" href="https://travis-ci.org/looly/hutool">
+		<img src="https://travis-ci.org/looly/hutool.svg?branch=v4-master" ></img>
+	</a>
+	<a target="_blank" href="https://gitter.im/hutool/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
+		<img src="https://badges.gitter.im/hutool/Lobby.svg" ></img>
+	</a>
+	<a target="_blank" href='https://gitee.com/loolly/hutool/stargazers'>
+		<img src='https://gitee.com/loolly/hutool/badge/star.svg?theme=dark' alt='star'></img>
 	</a>
 </p>
 <p align="center">
-	主页：<a href="http://hutool.cn">http://hutool.cn/</a><br/>
-	QQ群：<a href="http://shang.qq.com/wpa/qunwpa?idkey=382bb37ce779c11da77577f69d92d5171b340e3e7343d5ae0521f237c82c7810">537116831</a>
+	-- 主页：<a href="http://hutool.cn">http://hutool.cn/</a> --
+</p>
+<p align="center">
+	-- QQ群②：<a href="http://shang.qq.com/wpa/qunwpa?idkey=717c8e1444c2f3538ea37d792a19a23837cfc201e0d0de783e353b87009252eb">871141901</a> --
 </p>
 
 -------------------------------------------------------------------------------
@@ -26,7 +37,7 @@
 
 Hutool是一个Java工具包，也只是一个工具包，它帮助我们简化每一行代码，减少每一个方法，让Java语言也可以“甜甜的”。Hutool最初是我项目中“util”包的一个整理，后来慢慢积累并加入更多非业务相关功能，并广泛学习其它开源项目精髓，经过自己整理修改，最终形成丰富的开源工具集。
 
-Hutool是Hu + tool的自造词，前者致敬我的“前任公司”，后者为工具之意，谐音“糊涂”，寓意追求“万事都作糊涂观，无所谓失，无所谓得”的境界。
+Hutool是Hu + tool的自造词，谐音“糊涂”，寓意追求“万事都作糊涂观，无所谓失，无所谓得”的境界。
 
 -------------------------------------------------------------------------------
 
@@ -49,6 +60,7 @@ Hutool是Hu + tool的自造词，前者致敬我的“前任公司”，后者�
 - hutool-system        系统参数调用封装（JVM信息等）
 - hutool-json            JSON实现
 - hutool-captcha      图片验证码实现
+- hutool-poi             针对POI中Excel的封装
 
 -------------------------------------------------------------------------------
 
@@ -69,30 +81,32 @@ Hutool是Hu + tool的自造词，前者致敬我的“前任公司”，后者�
 <dependency>
     <groupId>cn.hutool</groupId>
     <artifactId>hutool-all</artifactId>
-    <version>4.1.8</version>
+    <version>4.1.20</version>
 </dependency>
 ```
 
 ### Gradle
 ```
-compile 'cn.hutool:hutool-all:4.1.8'
+compile 'cn.hutool:hutool-all:4.1.20'
 ```
 
 ### 非Maven项目
 
-点击已下任一链接，下载`hutool-all-X.X.X.jar`即可：
+点击以下任一链接，下载`hutool-all-X.X.X.jar`即可：
 
-- [Maven中央库1](http://repo1.maven.org/maven2/cn/hutool/hutool-all/4.1.8/)
-- [Maven中央库2](http://repo2.maven.org/maven2/cn/hutool/hutool-all/4.1.8/)
-- [阿里镜像](http://maven.aliyun.com/nexus/content/groups/public/cn/hutool/hutool-all/4.1.8/)
+- [Maven中央库1](http://repo1.maven.org/maven2/cn/hutool/hutool-all/4.1.20/)
+- [Maven中央库2](http://repo2.maven.org/maven2/cn/hutool/hutool-all/4.1.20/)
 
--------------------------------------------------------------------------------
+> 注意
+> Hutool只支持JDK7+，对应Android平台没有测试，部分方法并不支持。
 
-## 版本变更
+### 编译安装
 
-- [Release版本变更说明](https://gitee.com/loolly/hutool/blob/v4-master/CHANGELOG.md)
+访问Hutool的码云主页：[https://gitee.com/loolly/hutool](https://gitee.com/loolly/hutool) 下载整个项目源码（v4-master或v4-dev分支都可）然后进入Hutool项目目录执行：
 
-- [SNAPSHOT版本变更说明](https://gitee.com/loolly/hutool/blob/v4-dev/CHANGELOG.md)
+```sh
+bin/hutool.sh install
+```
 
 -------------------------------------------------------------------------------
 
@@ -100,8 +114,8 @@ compile 'cn.hutool:hutool-all:4.1.8'
 
 ### 提供bug反馈或建议
 
-- [码云](https://gitee.com/loolly/hutool/issues)
-- [Gtihub](https://github.com/looly/hutool/issues)
+- [码云Gitee](https://gitee.com/loolly/hutool/issues)
+- [Github](https://github.com/looly/hutool/issues)
 
 ### 遵照的原则
 

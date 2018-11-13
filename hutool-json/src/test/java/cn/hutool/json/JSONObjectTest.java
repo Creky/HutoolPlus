@@ -9,10 +9,12 @@ import org.junit.Test;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.test.bean.Seq;
-import cn.hutool.json.test.bean.UserWithMap;
 import cn.hutool.json.test.bean.UserA;
 import cn.hutool.json.test.bean.UserB;
+import cn.hutool.json.test.bean.UserWithMap;
 
 /**
  * JSONObject单元测试
@@ -96,21 +98,33 @@ public class JSONObjectTest {
 	public void toBeanTest2() {
 		UserA userA = new UserA();
 		userA.setA("A user");
-		userA.setName("nameTest");
+		userA.setName("{\n\t\"body\":{\n\t\t\"loginId\":\"id\",\n\t\t\"password\":\"pwd\"\n\t}\n}");
 		userA.setDate(new Date());
 		userA.setSqs(CollectionUtil.newArrayList(new Seq("seq1"), new Seq("seq2")));
 
 		JSONObject json = JSONUtil.parseObj(userA);
 		UserA userA2 = json.toBean(UserA.class);
+		//测试数组
 		Assert.assertEquals("seq1", userA2.getSqs().get(0).getSeq());
+		//测试带换行符等特殊字符转换是否成功
+		Assert.assertTrue(StrUtil.isNotBlank(userA2.getName()));
 	}
-
+	
 	@Test
 	public void toBeanTest3() {
 		String jsonStr = "{'data':{'userName':'ak','password': null}}";
 		UserWithMap user = JSONUtil.toBean(JSONUtil.parseObj(jsonStr), UserWithMap.class, true);
 		String password = user.getData().get("password");
+		Assert.assertTrue(user.getData().containsKey("password"));
 		Assert.assertNull(password);
+	}
+
+	@Test
+	public void toBeanTest4() {
+		String json = "{\"data\":{\"b\": \"c\"}}";
+
+		UserWithMap map = JSONUtil.toBean(json, UserWithMap.class);
+		Assert.assertEquals("c", map.getData().get("b"));
 	}
 
 	@Test
@@ -154,6 +168,28 @@ public class JSONObjectTest {
 
 		Assert.assertEquals(userA.getName(), userB.getName());
 		Assert.assertEquals(userA.getDate(), userB.getDate());
+	}
+	
+	@Test
+	public void beanTransTest2() {
+		UserA userA = new UserA();
+		userA.setA("A user");
+		userA.setName("nameTest");
+		userA.setDate(DateUtil.parse("2018-10-25"));
+		
+		JSONObject userAJson = JSONUtil.parseObj(userA);
+		//自定义日期格式
+		userAJson.setDateFormat("yyyy-MM-dd");
+		
+		UserA bean = JSONUtil.toBean(userAJson.toString(), UserA.class);
+		Assert.assertEquals(DateUtil.parse("2018-10-25"), bean.getDate());
+	}
+	
+	@Test
+	public void beanTransTest3() {
+		JSONObject userAJson = JSONUtil.createObj().put("a", "AValue").put("name", "nameValue").put("date", "08:00:00");
+		UserA bean = JSONUtil.toBean(userAJson.toString(), UserA.class);
+		Assert.assertEquals(DateUtil.today() + " 08:00:00", DateUtil.date(bean.getDate()).toString());
 	}
 
 	@Test

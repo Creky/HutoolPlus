@@ -33,12 +33,12 @@ public class ImageUtilTest {
 	public void cutTest() {
 		ImageUtil.cut(FileUtil.file("d:/face.jpg"), FileUtil.file("d:/face_result.jpg"), new Rectangle(200, 200, 100, 100));
 	}
-
+	
 	@Test
 	@Ignore
 	public void rotateTest() throws IOException {
-		BufferedImage image = ImageUtil.rotate(ImageIO.read(FileUtil.file("d:/logo.png")), 45);
-		ImageUtil.write(image, FileUtil.file("d:/result.png"));
+		BufferedImage image = ImageUtil.rotate(ImageIO.read(FileUtil.file("e:/line.png")), 45);
+		ImageUtil.write(image, FileUtil.file("e:/result.png"));
 	}
 
 	@Test
@@ -57,18 +57,30 @@ public class ImageUtilTest {
 	@Ignore
 	public void pressTextTest() {
 		ImageUtil.pressText(//
-				FileUtil.file("e:/test2.png"), //
+				FileUtil.file("e:/face.jpg"), //
 				FileUtil.file("e:/test2_result.png"), //
-				"123456", Color.RED, //
-				new Font("黑体", Font.BOLD, 40), //
-				-45, //
-				180, //
-				1.0f);
+				"版权所有", Color.WHITE, //
+				new Font("黑体", Font.BOLD, 100), //
+				0, //
+				0, //
+				0.8f);
 	}
 
 	@Test
 	@Ignore
 	public void sliceByRowsAndColsTest() {
 		ImageUtil.sliceByRowsAndCols(FileUtil.file("d:/picTest/1.jpg"), FileUtil.file("d:/picTest/dest"), 5, 5);
+	}
+	
+	@Test
+	@Ignore
+	public void convertTest() {
+		ImageUtil.convert(FileUtil.file("e:/test2.png"), FileUtil.file("e:/test2Convert.jpg"));
+	}
+	
+	@Test
+	@Ignore
+	public void writeTest() {
+		ImageUtil.write(ImageUtil.read("e:/test2.png"), FileUtil.file("e:/test2Write.jpg"));
 	}
 }

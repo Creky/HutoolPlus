@@ -70,10 +70,19 @@ public class HttpResponse extends HttpBase<HttpResponse> implements Closeable {
      * @return 状态码
      */
     public int getStatus() {
-        return status;
+		return this.status;
     }
 
     /**
+	 * 请求是否成功，判断依据为：状态码范围在200~299内。
+	 * @return 是否成功请求
+	 * @since 4.1.9
+	 */
+	public boolean isOk() {
+		return this.status >= 200 && this.status < 300;
+	}
+	
+	/**
      * 同步<br>
      * 如果为异步状态，则暂时不读取服务器中响应的内容，而是持有Http链接的{@link InputStream}。<br>
      * 当调用此方法时，异步状态转为同步状态，此时从Http链接流中读取body内容并暂存在内容中。如果已经是同步状态，则不进行任何操作。

@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
@@ -261,7 +262,7 @@ public class FileUtil {
 		} else {
 			// jar文件
 			path = getAbsolutePath(path);
-			if (false == path.endsWith(String.valueOf(UNIX_SEPARATOR))) {
+			if (false == StrUtil.endWith(path, UNIX_SEPARATOR)) {
 				path = path + UNIX_SEPARATOR;
 			}
 			// jar文件中的路径
@@ -274,7 +275,7 @@ public class FileUtil {
 					final String name = entry.getName();
 					if (name.startsWith(subPath)) {
 						final String nameSuffix = StrUtil.removePrefix(name, subPath);
-						if (nameSuffix.contains(String.valueOf(UNIX_SEPARATOR)) == false) {
+						if (false == StrUtil.contains(nameSuffix, UNIX_SEPARATOR)) {
 							paths.add(nameSuffix);
 						}
 					}
@@ -313,21 +314,20 @@ public class FileUtil {
 	}
 
 	/**
-	 * 创建File对象
+	 * 创建File对象<br>
+	 * 此方法会检查slip漏洞，漏洞说明见http://blog.nsfocus.net/zip-slip-2/
 	 * 
 	 * @param parent 父目录
 	 * @param path 文件路径
 	 * @return File
 	 */
 	public static File file(String parent, String path) {
-		if (StrUtil.isBlank(path)) {
-			throw new NullPointerException("File path is blank!");
-		}
-		return new File(parent, path);
+		return file(new File(parent), path);
 	}
 
 	/**
-	 * 创建File对象
+	 * 创建File对象<br>
+	 * 此方法会检查slip漏洞，漏洞说明见http://blog.nsfocus.net/zip-slip-2/
 	 * 
 	 * @param parent 父文件对象
 	 * @param path 文件路径
@@ -337,11 +337,12 @@ public class FileUtil {
 		if (StrUtil.isBlank(path)) {
 			throw new NullPointerException("File path is blank!");
 		}
-		return new File(parent, path);
+		return checkSlip(parent, new File(parent, path));
 	}
 
 	/**
-	 * 通过多层目录参数创建文件
+	 * 通过多层目录参数创建文件<br>
+	 * 此方法会检查slip漏洞，漏洞说明见http://blog.nsfocus.net/zip-slip-2/
 	 * 
 	 * @param directory 父目录
 	 * @param names 元素名（多层目录名）
@@ -357,7 +358,7 @@ public class FileUtil {
 		File file = directory;
 		for (String name : names) {
 			if (null != name) {
-				file = new File(file, name);
+				file = file(file, name);
 			}
 		}
 		return file;
@@ -379,9 +380,9 @@ public class FileUtil {
 		File file = null;
 		for (String name : names) {
 			if (file == null) {
-				file = new File(name);
+				file = file(name);
 			} else {
-				file = new File(file, name);
+				file = file(file, name);
 			}
 		}
 		return file;
@@ -558,7 +559,7 @@ public class FileUtil {
 	 * @return 是否晚于给定时间
 	 */
 	public static boolean newerThan(File file, File reference) {
-		if (null == file || false == reference.exists()) {
+		if (null == reference || false == reference.exists()) {
 			return true;// 文件一定比一个不存在的文件新
 		}
 		return newerThan(file, reference.lastModified());
@@ -1089,7 +1090,9 @@ public class FileUtil {
 		// 如果资源不存在，则返回一个拼接的资源绝对路径
 		final String classPath = ClassUtil.getClassPath();
 		if (null == classPath) {
-			throw new NullPointerException("ClassPath is null !");
+//			throw new NullPointerException("ClassPath is null !");
+			//在jar运行模式中，ClassPath有可能获取不到，此时返回原始相对路径（此时获取的文件为相对工作目录）
+			return path;
 		}
 
 		// 资源不存在的情况下使用标准化路径有问题，使用原始路径拼接后标准化路径
@@ -1382,12 +1385,17 @@ public class FileUtil {
 	 * @return 最后一个文件路径分隔符的位置
 	 */
 	public static int lastIndexOfSeparator(String filePath) {
-		if (filePath == null) {
-			return -1;
+		if (StrUtil.isNotEmpty(filePath)) {
+			int i = filePath.length();
+			char c;
+			while(i-- >= 0) {
+				c = filePath.charAt(i);
+				if(CharUtil.isFileSeparator(c)) {
+					return i;
+				}
+			}
 		}
-		int lastUnixPos = filePath.lastIndexOf(UNIX_SEPARATOR);
-		int lastWindowsPos = filePath.lastIndexOf(WINDOWS_SEPARATOR);
-		return (lastUnixPos >= lastWindowsPos) ? lastUnixPos : lastWindowsPos;
+		return -1;
 	}
 
 	/**
@@ -1615,6 +1623,51 @@ public class FileUtil {
 
 	// -------------------------------------------------------------------------------------------- name start
 	/**
+	 * 返回文件名
+	 * 
+	 * @param file 文件
+	 * @return 文件名
+	 * @since 4.1.13
+	 */
+	public static String getName(File file) {
+		return (null != file) ? file.getName() : null;
+	}
+	
+	/**
+	 * 返回文件名
+	 * 
+	 * @param filePath 文件
+	 * @return 文件名
+	 * @since 4.1.13
+	 */
+	public static String getName(String filePath) {
+		if (null == filePath) {
+			return filePath;
+		}
+		int len = filePath.length();
+		if(0 == len) {
+			return filePath;
+		}
+		if(CharUtil.isFileSeparator(filePath.charAt(len -1))) {
+			//以分隔符结尾的去掉结尾分隔符
+			len --;
+		}
+		
+		int begin = 0;
+		char c;
+		for(int i =len-1; i > -1; i --) {
+			c = filePath.charAt(i);
+			if(CharUtil.isFileSeparator(c)) {
+				//查找最后一个路径分隔符（/或者\）
+				begin = i +1;
+				break;
+			}
+		}
+		
+		return filePath.substring(begin, len);
+	}
+	
+	/**
 	 * 返回主文件名
 	 * 
 	 * @param file 文件
@@ -1634,10 +1687,36 @@ public class FileUtil {
 	 * @return 主文件名
 	 */
 	public static String mainName(String fileName) {
-		if (StrUtil.isBlank(fileName) || false == fileName.contains(StrUtil.DOT)) {
+		if (null == fileName) {
 			return fileName;
 		}
-		return StrUtil.subPre(fileName, fileName.lastIndexOf(StrUtil.DOT));
+		int len = fileName.length();
+		if(0 == len) {
+			return fileName;
+		}
+		if(CharUtil.isFileSeparator(fileName.charAt(len -1))) {
+			len --;
+		}
+		
+		int begin = 0;
+		int end = len;
+		char c;
+		for(int i =len-1; i > -1; i --) {
+			c = fileName.charAt(i);
+			if(len == end && CharUtil.DOT == c) {
+				//查找最后一个文件名和扩展名的分隔符：.
+				end = i;
+			}
+			if(0 == begin || begin > end) {
+				if(CharUtil.isFileSeparator(c)) {
+					//查找最后一个路径分隔符（/或者\），如果这个分隔符在.之后，则继续查找，否则结束
+					begin = i +1;
+					break;
+				}
+			}
+		}
+		
+		return fileName.substring(begin, end);
 	}
 
 	/**
@@ -1672,7 +1751,7 @@ public class FileUtil {
 		} else {
 			String ext = fileName.substring(index + 1);
 			// 扩展名中不能包含路径相关的符号
-			return (ext.contains(String.valueOf(UNIX_SEPARATOR)) || ext.contains(String.valueOf(WINDOWS_SEPARATOR))) ? StrUtil.EMPTY : ext;
+			return StrUtil.containsAny(ext, UNIX_SEPARATOR, WINDOWS_SEPARATOR) ? StrUtil.EMPTY : ext;
 		}
 	}
 	// -------------------------------------------------------------------------------------------- name end
@@ -3103,15 +3182,16 @@ public class FileUtil {
 	}
 
 	/**
-	 * 获取Web项目下的web root路径
+	 * 获取Web项目下的web root路径<br>
+	 * 原理是首先获取ClassPath路径，由于在web项目中ClassPath位于 WEB-INF/classes/下，故向上获取两级目录即可。
 	 * 
 	 * @return web root路径
 	 * @since 4.0.13
 	 */
 	public static File getWebRoot() {
-		String classPath = ClassUtil.getClassPath();
+		final String classPath = ClassUtil.getClassPath();
 		if (StrUtil.isNotBlank(classPath)) {
-			return file(classPath).getParentFile().getParentFile();
+			return getParent(file(classPath), 2);
 		}
 		return null;
 	}
@@ -3133,7 +3213,11 @@ public class FileUtil {
 	 */
 	public static String getParent(String filePath, int level) {
 		final File parent = getParent(file(filePath), level);
-		return null == parent ? null : parent.getAbsolutePath();
+		try {
+			return null == parent ? null : parent.getCanonicalPath();
+		} catch (IOException e) {
+			throw new IORuntimeException(e);
+		}
 	}
 
 	/**
@@ -3156,10 +3240,53 @@ public class FileUtil {
 			return file;
 		}
 
-		final File parentFile = file.getParentFile();
+		File parentFile;
+		try {
+			parentFile = file.getCanonicalFile().getParentFile();
+		} catch (IOException e) {
+			throw new IORuntimeException(e);
+		}
 		if (1 == level) {
 			return parentFile;
 		}
 		return getParent(parentFile, level - 1);
+	}
+	
+	/**
+	 * 检查父完整路径是否为自路径的前半部分，如果不是说明不是子路径，可能存在slip注入。
+	 * <p>
+	 * 见http://blog.nsfocus.net/zip-slip-2/
+	 * 
+	 * @param parentFile 父文件或目录
+	 * @param file 子文件或目录
+	 * @return 子文件或目录
+	 * @throws IllegalArgumentException 检查创建的子文件不在父目录中抛出此异常
+	 */
+	public static File checkSlip(File parentFile, File file) throws IllegalArgumentException {
+		if(null != parentFile && null != file) {
+			String parentCanonicalPath;
+			String canonicalPath;
+			try {
+				parentCanonicalPath = parentFile.getCanonicalPath();
+				canonicalPath = file.getCanonicalPath();
+			} catch (IOException e) {
+				throw new IORuntimeException(e);
+			}
+			if (false == canonicalPath.startsWith(parentCanonicalPath)) {
+				throw new IllegalArgumentException("New file is outside of the parent dir: " + file.getName());
+			}
+		}
+		return file;
+	}
+	
+	/**
+	 * 根据文件扩展名获得MimeType
+	 * 
+	 * @param filePath 文件路径或文件名
+	 * @return MimeType
+	 * @since 4.1.15
+	 */
+	public static String getMimeType(String filePath) {
+		return URLConnection.getFileNameMap().getContentTypeFor(filePath);
 	}
 }

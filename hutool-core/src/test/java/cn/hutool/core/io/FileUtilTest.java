@@ -20,9 +20,18 @@ import cn.hutool.core.util.CharsetUtil;
  */
 public class FileUtilTest {
 
-    @Test
-    public void getAbsolutePathTest() {
-        String absolutePath = FileUtil.getAbsolutePath("LICENSE-junit.txt");
+	@Test(expected = IllegalArgumentException.class)
+	public void fileTest() {
+		File file = FileUtil.file("d:/aaa", "bbb");
+		Assert.assertNotNull(file);
+
+		// 构建目录中出现非子目录抛出异常
+		FileUtil.file(file, "../ccc");
+	}
+
+	@Test
+	public void getAbsolutePathTest() {
+		String absolutePath = FileUtil.getAbsolutePath("LICENSE-junit.txt");
 		Assert.assertNotNull(absolutePath);
         String absolutePath2 = FileUtil.getAbsolutePath(absolutePath);
         Assert.assertNotNull(absolutePath2);
@@ -214,22 +223,86 @@ public class FileUtilTest {
 
 	@Test
 	public void getParentTest() {
-		File parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 0);
-		Assert.assertEquals(FileUtil.file("d:\\aaa\\bbb\\cc\\ddd"), parent);
+		// 只在Windows下测试
+		if (FileUtil.isWindows()) {
+			File parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 0);
+			Assert.assertEquals(FileUtil.file("d:\\aaa\\bbb\\cc\\ddd"), parent);
 
-		parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 1);
-		Assert.assertEquals(FileUtil.file("d:\\aaa\\bbb\\cc"), parent);
+			parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 1);
+			Assert.assertEquals(FileUtil.file("d:\\aaa\\bbb\\cc"), parent);
 
-		parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 2);
-		Assert.assertEquals(FileUtil.file("d:\\aaa\\bbb"), parent);
+			parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 2);
+			Assert.assertEquals(FileUtil.file("d:\\aaa\\bbb"), parent);
 
-		parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 4);
-		Assert.assertEquals(FileUtil.file("d:\\"), parent);
+			parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 4);
+			Assert.assertEquals(FileUtil.file("d:\\"), parent);
 
-		parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 5);
-		Assert.assertNull(parent);
+			parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 5);
+			Assert.assertNull(parent);
 
-		parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 10);
-		Assert.assertNull(parent);
+			parent = FileUtil.getParent(FileUtil.file("d:/aaa/bbb/cc/ddd"), 10);
+			Assert.assertNull(parent);
+		}
+
+	@Test
+	public void lastIndexOfSeparatorTest() {
+		String dir = "d:\\aaa\\bbb\\cc\\ddd";
+		int index = FileUtil.lastIndexOfSeparator(dir);
+		Assert.assertEquals(13, index);
+	}
+
+	@Test
+	public void getNameTest() {
+		String path = "d:\\aaa\\bbb\\cc\\ddd\\";
+		String name = FileUtil.getName(path);
+		Assert.assertEquals("ddd", name);
+
+		path = "d:\\aaa\\bbb\\cc\\ddd.jpg";
+		name = FileUtil.getName(path);
+		Assert.assertEquals("ddd.jpg", name);
+	}
+
+	@Test
+	public void mainNameTest() {
+		String path = "d:\\aaa\\bbb\\cc\\ddd\\";
+		String mainName = FileUtil.mainName(path);
+		Assert.assertEquals("ddd", mainName);
+
+		path = "d:\\aaa\\bbb\\cc\\ddd";
+		mainName = FileUtil.mainName(path);
+		Assert.assertEquals("ddd", mainName);
+
+		path = "d:\\aaa\\bbb\\cc\\ddd.jpg";
+		mainName = FileUtil.mainName(path);
+		Assert.assertEquals("ddd", mainName);
+	}
+
+	@Test
+	public void extNameTest() {
+		String path = "d:\\aaa\\bbb\\cc\\ddd\\";
+		String mainName = FileUtil.extName(path);
+		Assert.assertEquals("", mainName);
+
+		path = "d:\\aaa\\bbb\\cc\\ddd";
+		mainName = FileUtil.extName(path);
+		Assert.assertEquals("", mainName);
+
+		path = "d:\\aaa\\bbb\\cc\\ddd.jpg";
+		mainName = FileUtil.extName(path);
+		Assert.assertEquals("jpg", mainName);
+	}
+
+	@Test
+	public void getWebRootTest() {
+		File webRoot = FileUtil.getWebRoot();
+		Assert.assertNotNull(webRoot);
+		Assert.assertEquals("hutool-core", webRoot.getName());
+	}
+	
+	@Test
+	public void getMimeTypeTest() {
+		String mimeType = FileUtil.getMimeType("test2Write.jpg");
+		Assert.assertEquals("image/jpeg", mimeType);
+	}
 }
 }

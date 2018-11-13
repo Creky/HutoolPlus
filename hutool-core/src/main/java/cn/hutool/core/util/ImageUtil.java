@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -27,11 +28,13 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import cn.hutool.core.codec.Base64;
+import cn.hutool.core.convert.Convert;
 import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.img.Img;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.lang.Assert;
 
 /**
  * 图片处理工具类：<br>
@@ -315,7 +318,34 @@ public class ImageUtil {
 	 * @since 3.1.0
 	 */
 	public static BufferedImage cut(Image srcImage, Rectangle rectangle) {
-		return Img.from(srcImage).cut(rectangle).getImg();
+		return Img.from(srcImage).setPositionBaseCentre(false).cut(rectangle).getImg();
+	}
+	
+	/**
+	 * 图像切割(按指定起点坐标和宽高切割)，填充满整个图片（直径取长宽最小值）
+	 * 
+	 * @param srcImage 源图像
+	 * @param x 原图的x坐标起始位置
+	 * @param y 原图的y坐标起始位置
+	 * @return {@link BufferedImage}
+	 * @since 4.1.15
+	 */
+	public static BufferedImage cut(Image srcImage, int x, int y) {
+		return cut(srcImage, x, y, -1);
+	}
+	
+	/**
+	 * 图像切割(按指定起点坐标和宽高切割)
+	 * 
+	 * @param srcImage 源图像
+	 * @param x 原图的x坐标起始位置
+	 * @param y 原图的y坐标起始位置
+	 * @param radius 半径，小于0表示填充满整个图片（直径取长宽最小值）
+	 * @return {@link BufferedImage}
+	 * @since 4.1.15
+	 */
+	public static BufferedImage cut(Image srcImage, int x, int y, int radius) {
+		return Img.from(srcImage).cut(x, y, radius).getImg();
 	}
 
 	/**
@@ -445,16 +475,24 @@ public class ImageUtil {
 	 * 图像类型转换：GIF=》JPG、GIF=》PNG、PNG=》JPG、PNG=》GIF(X)、BMP=》PNG
 	 * 
 	 * @param srcImageFile 源图像文件
-	 * @param formatName 包含格式非正式名称的 String：如JPG、JPEG、GIF等
 	 * @param destImageFile 目标图像文件
 	 */
-	public static void convert(File srcImageFile, String formatName, File destImageFile) {
+	public static void convert(File srcImageFile, File destImageFile) {
+		Assert.notNull(srcImageFile);
+		Assert.notNull(destImageFile);
+		Assert.isFalse(srcImageFile.equals(destImageFile), "Src file is equals to dest file!");
+
+		final String srcExtName = FileUtil.extName(srcImageFile);
+		final String destExtName = FileUtil.extName(destImageFile);
+		if (StrUtil.equalsIgnoreCase(srcExtName, destExtName)) {
+			// 扩展名相同直接复制文件
+			FileUtil.copy(srcImageFile, destImageFile, true);
+		}
+
 		ImageOutputStream imageOutputStream = null;
 		try {
-			imageOutputStream = ImageIO.createImageOutputStream(destImageFile);
-			convert(ImageIO.read(srcImageFile), formatName, imageOutputStream);
-		} catch (IOException e) {
-			throw new IORuntimeException(e);
+			imageOutputStream = getImageOutputStream(destImageFile);
+			convert(read(srcImageFile), destExtName, imageOutputStream, StrUtil.equalsIgnoreCase(IMAGE_TYPE_PNG, srcExtName));
 		} finally {
 			IoUtil.close(imageOutputStream);
 		}
@@ -470,11 +508,7 @@ public class ImageUtil {
 	 * @since 3.0.9
 	 */
 	public static void convert(InputStream srcStream, String formatName, OutputStream destStream) {
-		try {
-			convert(ImageIO.read(srcStream), formatName, ImageIO.createImageOutputStream(destStream));
-		} catch (IOException e) {
-			throw new IORuntimeException(e);
-		}
+		write(read(srcStream), formatName, getImageOutputStream(destStream));
 	}
 
 	/**
@@ -485,13 +519,11 @@ public class ImageUtil {
 	 * @param formatName 包含格式非正式名称的 String：如JPG、JPEG、GIF等
 	 * @param destStream 目标图像输出流
 	 * @since 3.0.9
+	 * @deprecated 请使用{@link #write(Image, String, ImageOutputStream)}
 	 */
+	@Deprecated
 	public static void convert(ImageInputStream srcStream, String formatName, ImageOutputStream destStream) {
-		try {
-			convert(ImageIO.read(srcStream), formatName, destStream);
-		} catch (IOException e) {
-			throw new IORuntimeException(e);
-		}
+		write(read(srcStream), formatName, destStream);
 	}
 
 	/**
@@ -502,10 +534,26 @@ public class ImageUtil {
 	 * @param formatName 包含格式非正式名称的 String：如JPG、JPEG、GIF等
 	 * @param destImageStream 目标图像输出流
 	 * @since 3.0.9
+	 * @deprecated 请使用{@link #write(Image, String, ImageOutputStream)}
 	 */
+	@Deprecated
 	public static void convert(Image srcImage, String formatName, ImageOutputStream destImageStream) {
+		convert(srcImage, formatName, destImageStream, false);
+	}
+
+	/**
+	 * 图像类型转换：GIF=》JPG、GIF=》PNG、PNG=》JPG、PNG=》GIF(X)、BMP=》PNG<br>
+	 * 此方法并不关闭流
+	 * 
+	 * @param srcImage 源图像流
+	 * @param formatName 包含格式非正式名称的 String：如JPG、JPEG、GIF等
+	 * @param destImageStream 目标图像输出流
+	 * @param isSrcPng 源图片是否为PNG格式
+	 * @since 4.1.14
+	 */
+	public static void convert(Image srcImage, String formatName, ImageOutputStream destImageStream, boolean isSrcPng) {
 		try {
-			ImageIO.write(toBufferedImage(srcImage), formatName, destImageStream);
+			ImageIO.write(isSrcPng ? copyImage(srcImage, BufferedImage.TYPE_INT_RGB) : toBufferedImage(srcImage), formatName, destImageStream);
 		} catch (IOException e) {
 			throw new IORuntimeException(e);
 		}
@@ -914,6 +962,21 @@ public class ImageUtil {
 		return Img.from(srcImage).pressImage(pressImg, x, y, alpha).getImg();
 	}
 
+	/**
+	 * 给图片添加图片水印<br>
+	 * 此方法并不关闭流
+	 * 
+	 * @param srcImage 源图像流
+	 * @param pressImg 水印图片，可以使用{@link ImageIO#read(File)}方法读取文件
+	 * @param rectangle 矩形对象，表示矩形区域的x，y，width，height，x,y从背景图片中心计算
+	 * @param alpha 透明度：alpha 必须是范围 [0.0, 1.0] 之内（包含边界值）的一个浮点数字
+	 * @return 结果图片
+	 * @since 4.1.14
+	 */
+	public static BufferedImage pressImage(Image srcImage, Image pressImg, Rectangle rectangle, float alpha) {
+		return Img.from(srcImage).pressImage(pressImg, rectangle, alpha).getImg();
+	}
+
 	// ---------------------------------------------------------------------------------------------------------------------- rotate
 	/**
 	 * 旋转图片为指定角度<br>
@@ -1111,9 +1174,10 @@ public class ImageUtil {
 	public static BufferedImage toImage(byte[] imageBytes) throws IORuntimeException {
 		return read(new ByteArrayInputStream(imageBytes));
 	}
-	
+
 	/**
 	 * 将图片对象转换为Base64形式
+	 * 
 	 * @param image 图片对象
 	 * @param imageType 图片类型
 	 * @return Base64的字符串表现形式
@@ -1277,7 +1341,7 @@ public class ImageUtil {
 	}
 
 	/**
-	 * 写出图像为PNG格式
+	 * 写出图像为指定格式
 	 * 
 	 * @param image {@link Image}
 	 * @param imageType 图片类型（图片扩展名）
@@ -1286,8 +1350,26 @@ public class ImageUtil {
 	 * @since 3.1.2
 	 */
 	public static void write(Image image, String imageType, ImageOutputStream destImageStream) throws IORuntimeException {
+		if (StrUtil.isBlank(imageType)) {
+			imageType = IMAGE_TYPE_JPG;
+		}
+		
+		BufferedImage bufferedImage;
+		if(false == imageType.equalsIgnoreCase(IMAGE_TYPE_PNG)) {
+			//当目标为非PNG类图片时，源图片统一转换为RGB格式
+			if(image instanceof BufferedImage) {
+				bufferedImage = (BufferedImage)image;
+				if(BufferedImage.TYPE_INT_RGB != bufferedImage.getType()) {
+					bufferedImage = copyImage(image, BufferedImage.TYPE_INT_RGB);
+				}
+			}else {
+				bufferedImage = copyImage(image, BufferedImage.TYPE_INT_RGB);
+			}
+		}else {
+			bufferedImage = toBufferedImage(image);
+		}
 		try {
-			ImageIO.write(toBufferedImage(image), imageType, destImageStream);// 输出到文件流
+			ImageIO.write(bufferedImage, imageType, destImageStream);// 输出到文件流
 		} catch (IOException e) {
 			throw new IORuntimeException(e);
 		}
@@ -1302,14 +1384,12 @@ public class ImageUtil {
 	 * @since 3.1.0
 	 */
 	public static void write(Image image, File targetFile) throws IORuntimeException {
-		String formatName = FileUtil.extName(targetFile);
-		if (StrUtil.isBlank(formatName)) {
-			formatName = IMAGE_TYPE_JPG;
-		}
+		ImageOutputStream out = null;
 		try {
-			ImageIO.write(toBufferedImage(image), formatName, targetFile);// 输出到文件
-		} catch (IOException e) {
-			throw new IORuntimeException(e);
+			out = getImageOutputStream(targetFile);
+			write(image, FileUtil.extName(targetFile), out);
+		}finally {
+			IoUtil.close(out);
 		}
 	}
 
@@ -1325,6 +1405,17 @@ public class ImageUtil {
 			return iterator.next();
 		}
 		return null;
+	}
+	
+	/**
+	 * 从文件中读取图片，请使用绝对路径，使用相对路径会相对于ClassPath
+	 * 
+	 * @param imageFilePath 图片文件路径
+	 * @return 图片
+	 * @since 4.1.15
+	 */
+	public static BufferedImage read(String imageFilePath) {
+		return read(FileUtil.file(imageFilePath));
 	}
 
 	/**
@@ -1433,6 +1524,121 @@ public class ImageUtil {
 		} catch (IOException e) {
 			throw new IORuntimeException(e);
 		}
+	}
+
+	// -------------------------------------------------------------------------------------------------------------------- Color
+	/**
+	 * Color对象转16进制表示，例如#fcf6d6
+	 * 
+	 * @param color {@link Color}
+	 * @return 16进制的颜色值，例如#fcf6d6
+	 * @since 4.1.14
+	 */
+	public static String toHex(Color color) {
+		String R = Integer.toHexString(color.getRed());
+		R = R.length() < 2 ? ('0' + R) : R;
+		String G = Integer.toHexString(color.getGreen());
+		G = G.length() < 2 ? ('0' + G) : G;
+		String B = Integer.toHexString(color.getBlue());
+		B = B.length() < 2 ? ('0' + B) : B;
+		return '#' + R + G + B;
+	}
+
+	/**
+	 * 16进制的颜色值转换为Color对象，例如#fcf6d6
+	 * 
+	 * @param hex 16进制的颜色值，例如#fcf6d6
+	 * @return {@link Color}
+	 * @since 4.1.14
+	 */
+	public static Color hexToColor(String hex) {
+		return getColor(Integer.parseInt(StrUtil.removePrefix("#", hex), 16));
+	}
+
+	/**
+	 * 获取一个RGB值对应的颜色
+	 * 
+	 * @param rgb RGB值
+	 * @return {@link Color}
+	 * @since 4.1.14
+	 */
+	public static Color getColor(int rgb) {
+		return new Color(rgb);
+	}
+
+	/**
+	 * 将颜色值转换成具体的颜色类型 汇集了常用的颜色集，支持以下几种形式：
+	 * 
+	 * <pre>
+	 * 1. 颜色的英文名（大小写皆可）
+	 * 2. 16进制表示，例如：#fcf6d6或者$fcf6d6
+	 * 3. RGB形式，例如：13,148,252
+	 * </pre>
+	 * 
+	 * 方法来自：com.lnwazg.kit
+	 * 
+	 * @param colorName 颜色的英文名，16进制表示或RGB表示
+	 * @return {@link Color}
+	 * @since 4.1.14
+	 */
+	public static Color getColor(String colorName) {
+		if (StrUtil.isBlank(colorName)) {
+			return null;
+		}
+		colorName = colorName.toUpperCase();
+
+		if ("BLACK".equals(colorName)) {
+			return Color.BLACK;
+		} else if ("WHITE".equals(colorName)) {
+			return Color.WHITE;
+		} else if ("LIGHTGRAY".equals(colorName) || "LIGHT_GRAY".equals(colorName)) {
+			return Color.LIGHT_GRAY;
+		} else if ("GRAY".equals(colorName)) {
+			return Color.GRAY;
+		} else if ("DARK_GRAY".equals(colorName) || "DARK_GRAY".equals(colorName)) {
+			return Color.DARK_GRAY;
+		} else if ("RED".equals(colorName)) {
+			return Color.RED;
+		} else if ("PINK".equals(colorName)) {
+			return Color.PINK;
+		} else if ("ORANGE".equals(colorName)) {
+			return Color.ORANGE;
+		} else if ("YELLOW".equals(colorName)) {
+			return Color.YELLOW;
+		} else if ("GREEN".equals(colorName)) {
+			return Color.GREEN;
+		} else if ("MAGENTA".equals(colorName)) {
+			return Color.MAGENTA;
+		} else if ("CYAN".equals(colorName)) {
+			return Color.CYAN;
+		} else if ("BLUE".equals(colorName)) {
+			return Color.BLUE;
+		} else if ("DARKGOLD".equals(colorName)) {
+			// 暗金色
+			return hexToColor("#9e7e67");
+		} else if ("LIGHTGOLD".equals(colorName)) {
+			// 亮金色
+			return hexToColor("#ac9c85");
+		} else if (StrUtil.startWith(colorName, '#')) {
+			return hexToColor(colorName);
+		} else if (StrUtil.startWith(colorName, '$')) {
+			// 由于#在URL传输中无法传输，因此用$代替#
+			return hexToColor("#" + colorName.substring(1));
+		} else {
+			// rgb值
+			final List<String> rgb = StrUtil.split(colorName, ',');
+			if (3 == rgb.size()) {
+				final Integer r = Convert.toInt(rgb.get(0));
+				final Integer g = Convert.toInt(rgb.get(1));
+				final Integer b = Convert.toInt(rgb.get(2));
+				if (false == ArrayUtil.hasNull(r, g, b)) {
+					return new Color(r, g, b);
+				}
+			} else {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	/**

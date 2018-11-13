@@ -729,6 +729,26 @@ public class StrUtil {
 	public static boolean containsAny(CharSequence str, CharSequence... testStrs) {
 		return null != getContainsStr(str, testStrs);
 	}
+	
+	/**
+	 * 查找指定字符串是否包含指定字符列表中的任意一个字符
+	 * 
+	 * @param str 指定字符串
+	 * @param testChars 需要检查的字符数组
+	 * @return 是否包含任意一个字符
+	 * @since 4.1.11
+	 */
+	public static boolean containsAny(CharSequence str, char... testChars) {
+		if(false == isEmpty(str)) {
+			int len = str.length();
+			for(int i = 0; i < len; i++) {
+				if(ArrayUtil.contains(testChars, str.charAt(i))) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * 给定字符串是否包含空白符（空白符包括空格、制表符、全角空格和不间断空格）<br>
@@ -1050,7 +1070,7 @@ public class StrUtil {
 		}
 		return str2;
 	}
-
+	
 	/**
 	 * 去除两边的指定字符串
 	 * 
@@ -1593,9 +1613,7 @@ public class StrUtil {
 	/**
 	 * 截取分隔字符串之前的字符串，不包括分隔字符串<br>
 	 * 如果给定的字符串为空串（null或""）或者分隔字符串为null，返回原字符串<br>
-	 * 如果分隔字符串为空串""，则返回空串，如果分隔字符串未找到，返回原字符串
-	 * 
-	 * 栗子：
+	 * 如果分隔字符串为空串""，则返回空串，如果分隔字符串未找到，返回原字符串，举例如下：
 	 * 
 	 * <pre>
 	 * StrUtil.subBefore(null, *)      = null
@@ -1625,8 +1643,47 @@ public class StrUtil {
 			return EMPTY;
 		}
 		final int pos = isLastSeparator ? str.lastIndexOf(sep) : str.indexOf(sep);
-		if (pos == INDEX_NOT_FOUND) {
+		if (INDEX_NOT_FOUND == pos) {
 			return str;
+		}
+		if(0 == pos) {
+			return EMPTY;
+		}
+		return str.substring(0, pos);
+	}
+	
+	/**
+	 * 截取分隔字符串之前的字符串，不包括分隔字符串<br>
+	 * 如果给定的字符串为空串（null或""）或者分隔字符串为null，返回原字符串<br>
+	 * 如果分隔字符串未找到，返回原字符串，举例如下：
+	 * 
+	 * <pre>
+	 * StrUtil.subBefore(null, *)      = null
+	 * StrUtil.subBefore("", *)        = ""
+	 * StrUtil.subBefore("abc", 'a')   = ""
+	 * StrUtil.subBefore("abcba", 'b') = "a"
+	 * StrUtil.subBefore("abc", 'c')   = "ab"
+	 * StrUtil.subBefore("abc", 'd')   = "abc"
+	 * </pre>
+	 * 
+	 * @param string 被查找的字符串
+	 * @param separator 分隔字符串（不包括）
+	 * @param isLastSeparator 是否查找最后一个分隔字符串（多次出现分隔字符串时选取最后一个），true为选取最后一个
+	 * @return 切割后的字符串
+	 * @since 4.1.15
+	 */
+	public static String subBefore(CharSequence string, char separator, boolean isLastSeparator) {
+		if (isEmpty(string)) {
+			return null == string ? null : string.toString();
+		}
+		
+		final String str = string.toString();
+		final int pos = isLastSeparator ? str.lastIndexOf(separator) : str.indexOf(separator);
+		if (INDEX_NOT_FOUND == pos) {
+			return str;
+		}
+		if(0 == pos) {
+			return EMPTY;
 		}
 		return str.substring(0, pos);
 	}
@@ -1634,10 +1691,8 @@ public class StrUtil {
 	/**
 	 * 截取分隔字符串之后的字符串，不包括分隔字符串<br>
 	 * 如果给定的字符串为空串（null或""），返回原字符串<br>
-	 * 如果分隔字符串为空串（null或""），则返回空串，如果分隔字符串未找到，返回空串
+	 * 如果分隔字符串为空串（null或""），则返回空串，如果分隔字符串未找到，返回空串，举例如下：
 	 *
-	 * 栗子：
-	 * 
 	 * <pre>
 	 * StrUtil.subAfter(null, *)      = null
 	 * StrUtil.subAfter("", *)        = ""
@@ -1665,10 +1720,42 @@ public class StrUtil {
 		final String str = string.toString();
 		final String sep = separator.toString();
 		final int pos = isLastSeparator ? str.lastIndexOf(sep) : str.indexOf(sep);
-		if (pos == INDEX_NOT_FOUND) {
+		if (INDEX_NOT_FOUND == pos || (string.length() - 1) == pos) {
 			return EMPTY;
 		}
 		return str.substring(pos + separator.length());
+	}
+	
+	/**
+	 * 截取分隔字符串之后的字符串，不包括分隔字符串<br>
+	 * 如果给定的字符串为空串（null或""），返回原字符串<br>
+	 * 如果分隔字符串为空串（null或""），则返回空串，如果分隔字符串未找到，返回空串，举例如下：
+	 *
+	 * <pre>
+	 * StrUtil.subAfter(null, *)      = null
+	 * StrUtil.subAfter("", *)        = ""
+	 * StrUtil.subAfter("abc", 'a')   = "bc"
+	 * StrUtil.subAfter("abcba", 'b') = "cba"
+	 * StrUtil.subAfter("abc", 'c')   = ""
+	 * StrUtil.subAfter("abc", 'd')   = ""
+	 * </pre>
+	 *
+	 * @param string 被查找的字符串
+	 * @param separator 分隔字符串（不包括）
+	 * @param isLastSeparator 是否查找最后一个分隔字符串（多次出现分隔字符串时选取最后一个），true为选取最后一个
+	 * @return 切割后的字符串
+	 * @since 4.1.15
+	 */
+	public static String subAfter(CharSequence string, char separator, boolean isLastSeparator) {
+		if (isEmpty(string)) {
+			return null == string ? null : string.toString();
+		}
+		final String str = string.toString();
+		final int pos = isLastSeparator ? str.lastIndexOf(separator) : str.indexOf(separator);
+		if (INDEX_NOT_FOUND == pos) {
+			return EMPTY;
+		}
+		return str.substring(pos + 1);
 	}
 
 	/**
@@ -3452,6 +3539,19 @@ public class StrUtil {
 		}
 		return new String(chars);
 	}
+	
+	/**
+	 * 替换指定字符串的指定区间内字符为"*"
+	 * 
+	 * @param str 字符串
+	 * @param startInclude 开始位置（包含）
+	 * @param endExclude 结束位置（不包含）
+	 * @return 替换后的字符串
+	 * @since 4.1.14
+	 */
+	public static String hide(CharSequence str, int startInclude, int endExclude) {
+		return replace(str, startInclude, endExclude, '*');
+	}
 
 	/**
 	 * 替换字符字符数组中所有的字符为replacedStr<br>
@@ -3603,10 +3703,10 @@ public class StrUtil {
 	 * 
 	 * @return UUID字符串
 	 * @since 4.0.10
-	 * @see RandomUtil#randomUUID()
+	 * @see IdUtil#randomUUID()
 	 */
 	public static String uuid() {
-		return RandomUtil.randomUUID();
+		return IdUtil.randomUUID();
 	}
 
 	/**

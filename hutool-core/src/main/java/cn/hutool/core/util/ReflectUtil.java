@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.lang.Filter;
@@ -54,7 +55,7 @@ public class ReflectUtil {
 		for (Constructor<?> constructor : constructors) {
 			pts = constructor.getParameterTypes();
 			if (ClassUtil.isAllAssignableFrom(pts, parameterTypes)) {
-				//构造可访问
+				// 构造可访问
 				constructor.setAccessible(true);
 				return (Constructor<T>) constructor;
 			}
@@ -197,6 +198,26 @@ public class ReflectUtil {
 	}
 
 	/**
+	 * 获取所有字段的值
+	 * @param obj bean对象
+	 * @return 字段值数组
+	 * @since 4.1.17
+	 */
+	public static Object[] getFieldsValue(Object obj) {
+		if (null != obj) {
+			final Field[] fields = getFields(obj.getClass());
+			if (null != fields) {
+				final Object[] values = new Object[fields.length];
+				for (int i = 0; i < fields.length; i++) {
+					values[i] = getFieldValue(obj, fields[i]);
+				}
+				return values;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * 设置字段值
 	 * 
 	 * @param obj 对象
@@ -231,6 +252,112 @@ public class ReflectUtil {
 	}
 
 	// --------------------------------------------------------------------------------------------------------- method
+	/**
+	 * 获得指定类本类及其父类中的Public方法名<br>
+	 * 去重重载的方法
+	 * 
+	 * @param clazz 类
+	 * @return 方法名Set
+	 */
+	public static Set<String> getPublicMethodNames(Class<?> clazz) {
+		final HashSet<String> methodSet = new HashSet<String>();
+		final Method[] methodArray = getPublicMethods(clazz);
+		if(ArrayUtil.isNotEmpty(methodArray)) {
+			for (Method method : methodArray) {
+				methodSet.add(method.getName());
+			}
+		}
+		return methodSet;
+	}
+
+	/**
+	 * 获得本类及其父类所有Public方法
+	 * 
+	 * @param clazz 查找方法的类
+	 * @return 过滤后的方法列表
+	 */
+	public static Method[] getPublicMethods(Class<?> clazz) {
+		return null == clazz ? null : clazz.getMethods();
+	}
+
+	/**
+	 * 获得指定类过滤后的Public方法列表
+	 * 
+	 * @param clazz 查找方法的类
+	 * @param filter 过滤器
+	 * @return 过滤后的方法列表
+	 */
+	public static List<Method> getPublicMethods(Class<?> clazz, Filter<Method> filter) {
+		if (null == clazz) {
+			return null;
+		}
+
+		final Method[] methods = getPublicMethods(clazz);
+		List<Method> methodList;
+		if (null != filter) {
+			methodList = new ArrayList<>();
+			for (Method method : methods) {
+				if (filter.accept(method)) {
+					methodList.add(method);
+				}
+			}
+		} else {
+			methodList = CollectionUtil.newArrayList(methods);
+		}
+		return methodList;
+	}
+
+	/**
+	 * 获得指定类过滤后的Public方法列表
+	 * 
+	 * @param clazz 查找方法的类
+	 * @param excludeMethods 不包括的方法
+	 * @return 过滤后的方法列表
+	 */
+	public static List<Method> getPublicMethods(Class<?> clazz, Method... excludeMethods) {
+		final HashSet<Method> excludeMethodSet = CollectionUtil.newHashSet(excludeMethods);
+		return getPublicMethods(clazz, new Filter<Method>() {
+			@Override
+			public boolean accept(Method method) {
+				return false == excludeMethodSet.contains(method);
+			}
+		});
+	}
+
+	/**
+	 * 获得指定类过滤后的Public方法列表
+	 * 
+	 * @param clazz 查找方法的类
+	 * @param excludeMethodNames 不包括的方法名列表
+	 * @return 过滤后的方法列表
+	 */
+	public static List<Method> getPublicMethods(Class<?> clazz, String... excludeMethodNames) {
+		final HashSet<String> excludeMethodNameSet = CollectionUtil.newHashSet(excludeMethodNames);
+		return getPublicMethods(clazz, new Filter<Method>() {
+			@Override
+			public boolean accept(Method method) {
+				return false == excludeMethodNameSet.contains(method.getName());
+			}
+		});
+	}
+
+	/**
+	 * 查找指定Public方法 如果找不到对应的方法或方法不为public的则返回<code>null</code>
+	 * 
+	 * @param clazz 类
+	 * @param methodName 方法名
+	 * @param paramTypes 参数类型
+	 * @return 方法
+	 * @throws SecurityException 无权访问抛出异常
+	 */
+	public static Method getPublicMethod(Class<?> clazz, String methodName, Class<?>... paramTypes) throws SecurityException {
+		try {
+			return clazz.getMethod(methodName, paramTypes);
+		} catch (NoSuchMethodException ex) {
+			return null;
+		}
+	}
+	
 	/**
 	 * 查找指定对象中的所有方法（包括非public方法），也包括父对象和Object类的方法
 	 * 
@@ -294,7 +421,7 @@ public class ReflectUtil {
 		if (ArrayUtil.isNotEmpty(methods)) {
 			for (Method method : methods) {
 				if (StrUtil.equals(methodName, method.getName(), ignoreCase)) {
-					if (ArrayUtil.isEmpty(paramTypes) || ClassUtil.isAllAssignableFrom(method.getParameterTypes(), paramTypes)) {
+					if (ClassUtil.isAllAssignableFrom(method.getParameterTypes(), paramTypes)) {
 						return method;
 					}
 				}
@@ -455,26 +582,26 @@ public class ReflectUtil {
 	@SuppressWarnings("unchecked")
 	public static <T> T newInstance(Class<T> clazz, Object... params) throws UtilException {
 		if (ArrayUtil.isEmpty(params)) {
-			if(Map.class.isAssignableFrom(clazz)) {
-				//Map
-				if(LinkedHashMap.class.isAssignableFrom(clazz)) {
+			if (Map.class.isAssignableFrom(clazz)) {
+				// Map
+				if (LinkedHashMap.class.isAssignableFrom(clazz)) {
 					return (T) MapUtil.newHashMap(true);
-				}else {
+				} else {
 					return (T) MapUtil.newHashMap();
 				}
-			} else if(Iterable.class.isAssignableFrom(clazz)) {
-				//Iterable
-				if(LinkedHashSet.class.isAssignableFrom(clazz)) {
+			} else if (Iterable.class.isAssignableFrom(clazz)) {
+				// Iterable
+				if (LinkedHashSet.class.isAssignableFrom(clazz)) {
 					return (T) new LinkedHashSet<>();
-				}else if(Set.class.isAssignableFrom(clazz)) {
+				} else if (Set.class.isAssignableFrom(clazz)) {
 					return (T) new HashSet<>();
-				} else if(LinkedList.class.isAssignableFrom(clazz)) {
+				} else if (LinkedList.class.isAssignableFrom(clazz)) {
 					return (T) new LinkedList<>();
 				} else {
 					return (T) CollUtil.newArrayList();
 				}
 			}
-			
+
 			final Constructor<T> constructor = getConstructor(clazz);
 			try {
 				return constructor.newInstance();
@@ -510,7 +637,7 @@ public class ReflectUtil {
 			// ignore
 			// 默认构造不存在的情况下查找其它构造
 		}
-		
+
 		final Constructor<T>[] constructors = getConstructors(beanClass);
 		Class<?>[] parameterTypes;
 		for (Constructor<T> constructor : constructors) {

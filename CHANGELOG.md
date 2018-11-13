@@ -3,6 +3,228 @@
 
 -------------------------------------------------------------------------------------------------------------
 
+## 4.1.20
+
+### 新特性
+* 【http】        增强SoapRequest的兼容性（感谢@【南京】陽光）
+* 【core】        改进ZipUtil错误提示
+* 【core】        DateUtil.parse方法读取时间时，年月日按照当天计算。（issue#INYCF@Gitee）
+* 【core】        DateUtil.parse改进支持UTC时间格式。
+* 【db】          MongoDS支持客户端验证（issue#IO2DS@Gitee）
+* 【core】        改进字符串转集合和数组（支持逗号分隔形式）（pr#26@Gitee）
+* 【core】        改进DateConverter（issue#IOCWR@Gitee）
+* 【core】        改进NumberUtil中转数字，支持字母结尾（issue#IOCWR@Gitee）
+* 【poi】          ExcelUtil增加indexToColName和colNameToIndex方法（issue#IO8ZH@Gitee）
+* 【core】        Convert.toList修改为泛型（issue#IOJZV@Gitee）
+* 【core】        BeanDesc中属性修改为使用LinkedHashMap存储
+* 【core】        ArrayUtil.get和CollUtil.get对于越界返回null而非抛出异常（issue#IOFKL@Gitee）
+* 【core】        EnumUtil增加likeValueOf方法（issue#IOFKL@Gitee）
+* 【core】        删除CollUtil.sortPageAll2方法，增加ColllUtil.page方法
+
+### Bug修复
+* 【core】        修正CollUtil.sortPageAll逻辑（pr#186@Github）
+* 【core】        修复ClassLoaderUtil.loadClass不能加载内部类问题（issue#IO4GF@Gitee）
+* 【core】        修复CustomKeyLinkedMap继承问题（issue#IO5Y2@Gitee）
+* 【core】        修复NumberUtil.isPrimes没有参数校验导致的问题（issue#IO57Q@Gitee）
+* 【extra】       修复QrConfig 引入包错误问题（pr#194@Github）
+* 【extra】       修复Sftp创建目录问题（issue#INZUP@Gitee）
+* 【core】        修复CollUtil.sortPageAll方法
+* 【core】        修复ImageUtil图片旋转出现黑边问题（pr#189@Github）
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.19
+
+### 新特性
+* 【extra】        Ftp增加setMode方法（issue#INPMZ@Gitee）
+* 【core】         IdUtil增加fastUUID和fastSimpleUUID方法（issue#INU37@Gitee）
+* 【core】         DateUtil增加formatChineseDate方法（issue#INT6I@Gitee）
+* 【core】         ClassUtil中部分方法迁移至ReflectUtil
+* 【json】          新增JSONConfig，统一JSON配置，并添加可选的自定义输出日期格式支持
+
+### Bug修复
+* 【core】        修复ImageUtil文件流未关闭问题（感谢@【西安】追寻）
+* 【core】        修复ZipUtil中gzip和zlib方法未调用finish导致的问题（issue#INSXF@Gitee）
+* 【core】        修复ZipUtil中文件目录同名无法压缩的问题（issue#INQ1K@Gitee）
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.18
+
+### 新特性
+* 【http】         改进字符串匹配正则（issue#INHPD@Gitee）
+* 【core】        增加gzip和UnGzip针对流的方法（issue#INKMP@Gitee）
+* 【http】         增加ThreadLocalCookieStore
+
+### Bug修复
+* 【core】        修复BeanUtil.copyProperties参数多余问题
+* 【cron】        修复表达式匹配错误问题（issue#INLEE@Gitee）
+* 【core】        修复ReflectUtil获取空参数方法导致的问题（issue#INN5W@Gitee）
+* 【json】         修复JSONArray.toList方法导致的问题（issue#INO3F@Gitee）
+* 【core】        修复NumberUtil.parseLong中0转换问题方法导致的问题（issue#INO3F@Gitee）
+* 【core】        修复CompareUtil循环引用问题（issue#180@Github）
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.17
+
+### 新特性
+
+### Bug修复
+* 【core】         修复JDK7之后比较器中违反自反性导致的问题
+* 【cron】         修改部分逻辑
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.16
+
+### 新特性
+* 【core】         Convert.增加boolean类型转数字（issue#INCKM@Gitee）
+* 【core】         新增BooleanUtil
+
+### Bug修复
+* 【core】         修复JDK11下Caller被弃用导致的问题（issue#174@Github）
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.15
+
+### 新特性
+* 【core】         Convert.toInt增加容错，NumberUtil增加toNumber方法（issue#IN2LP@Gitee）
+* 【core】         ImageUtil增加cut切圆形方法（issue#IN3JJ@Gitee）
+* 【core】         Img增加setPositionBaseCentre可选坐标计算基于中心（issue#IN3JM@Gitee）
+* 【core】         ImageUtil增加逻辑判断颜色模式，避免失色问题（issue#IN3JK@Gitee）
+* 【cron】         改进规则支持20/2这类形式
+* 【extra】         ServletUtil.write增加重载方法支持文件（issue#IN9O0@Gitee）
+
+### Bug修复
+* 【core】         修复DateUtil.yearAndQuarter计算错误的问题（issue#IN38V@Gitee）
+* 【core】         修复ClassUtil.isPublic判断问题（issue#IN38V@Gitee）
+* 【extra】        修复JschUtil中Session关闭未移除出池导致的问题（issue#171@Github）
+* 【core】        修复NumberUtil.isInteger中0判断问题（issue#IN9BS@Gitee）
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.14
+
+### 新特性
+* 【core】         StrUtil增加hide方法
+* 【core】         PatternPool增加URL_HTTP，原URL规则变更
+* 【extra】        统一FTP和SFTP接口规范
+* 【extra】        QrCodeUtil支持二维码中贴Logo图片
+* 【core】         校准ImageUtil.pressText文字位置
+* 【core】         ImageUtil增加getColor等方法
+* 【core】         增加RobotUtil提供截屏等封装，增加ScreenUtil用于获取屏幕属性
+* 【extra】        QrCodeUtil增加条形码等其它类型支持（issue#IN1CR@Gitee）
+* 【core】         增加DateUtil.parseUTC方法（issue#IN1IO@Gitee）
+* 【core】         增加DateUtil.isWeekend方法
+* 【all】            加入Travis-CI验证项目构建
+
+### Bug修复
+* 【core】         修复ImageUtil.convert转换png变色问题（issue#IMWUO@Gitee）
+* 【core】         修复FileUtil.newerThan中null判断的问题（issue#165@Github）
+* 【extra】        修复Ftp中mkdir方法引起的数组越界问题
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.13
+
+### 新特性
+* 【core】         增加RejectPolicy线程池线程拒绝策略枚举
+* 【core】         DateUtil增加isSame方法
+* 【core】         FileUtil.getAbsolutePath方法在获取不到ClassPath情况下返回原路径
+* 【core】         打印SQL日志覆盖每一个方法
+* 【core】         Convert.toXXX转数字的时候默认去除两边空白符
+* 【poi】           增加BigExcelWriter，支持Excel大数据导出（issue#IK47S@Gitee）
+* 【core】         ExceptionUtil增加isCausedBy和getCausedBy方法
+* 【poi】           EnumUtil增加toString和fromString
+* 【poi】           新增IdUtil工具类
+
+### Bug修复
+* 【core】         修复RuntimeUtil.getResultLines未关闭Process问题（pr#164@Github）
+* 【core】         修复ClassPathResource在jar运行模式下的空指针问题
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.12
+
+### 新特性
+* 【core】         ExcelReader.read方法返回的Map默认有序
+
+### Bug修复
+* 【core】         修复ZipUtil以及FileUtil中slip漏洞（issue#162@Github）
+* 【core】         修复ZipUtil路径问题（issue#IMUEK@Gitee）
+* 【core】         修复FileUtil.getParent方法获取父路径不严格导致空指针问题
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.11
+
+### 新特性
+* 【core】         Convert增加toList方法
+* 【core】         StrUtil增加containsAny针对char的重载
+* 【core】         FileUtil.mainName修正处理逻辑
+* 【core】         CharUtil增加isFileSeparator方法
+* 【core】         增加UUID类，提升Simple模式下性能
+* 【poi】           ExcelUtil增加setStyleSet方法，修改write逻辑，对于单列数据输出，而非忽略（感谢@【宁波】mojie126）
+* 【core】         新增WebAppResource类
+* 【extra】        新增Thymeleaf模板支持
+* 【setting】      去除Setting日志
+
+### Bug修复
+* 【script】        修复FullSupportScriptEngine构造中ext和mimeType方式获取引擎丢失问题
+* 【cron】         修复定时任务执行阻塞问题
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.10
+
+### 新特性
+* 【extra】         Template增加Jfinal的Enjoy模板支持
+* 【core】          Assert增加checkBetween方法，Validator增加isBetween和validatorBetween
+* 【core】          增加CollUtil.getLast方法（感谢@【帝都】宁静）
+* 【core】          修改Assert.notNull注释（issue#IMI3Z@Gitee）
+* 【core】          BeanUtil增加isEmpty和hasNullField方法（pr#157@Github）
+* 【log】            ConsoleLog增加setLevel方法（issue#IMLZ3@Gitee）
+* 【captcha】     解决验证码超出背景的问题（issue#IHWHE@Gitee）
+
+### Bug修复
+* 【core】         修复BOMInputStream构造的问题（pr#22@Gitee）
+* 【json】          修复toBean中如果字段中为字符串而JSON中为JSONObject对象注入失败问题（issue#IMGBJ@Gitee）
+* 【setting】      修复keySet总返回空问题（issue#IMHD7@Gitee）
+* 【extra】        修复starttls和SSL连接混淆问题（issue#IMLMD@Gitee）
+* 【setting】      修复getStr无法获取默认值问题（issue#IMLMI@Gitee）
+* 【core】         修复BeanUtil.mapToBean设置别名失效问题
+
+-------------------------------------------------------------------------------------------------------------
+
+## 4.1.9
+
+### 新特性
+* 【core】         MapUtil增加toObjectArray方法
+* 【core】         URLUtil.normalize增加反斜杠处理（issue#IM8BI@Gitee）
+* 【core】         增加ClassUtil.getShortClassName（issue#IM8XM@Gitee）
+* 【core】         增加ThreadFactoryBuilder和ExecutorBuilder
+* 【cron】         定时任务改为线程池实现
+* 【core】         Assert增加checkIndex方法
+* 【core】         parseBoolean增加on、off关键字支持可选字符串
+* 【core】         URLUtil.formatUrl方法兼容更多情况（issue#IMAEA@Gitee）
+* 【core】         改进NumberUtil.isInteger和isLong判断（issue#IMDGB@Gitee）
+* 【http】          HttpResponse增加isOk方法（issue#155@Github）
+* 【http】          改进HttpUtil.downloadXXX方法，返回非2XX抛出异常（issue#IMCTT@Gitee）
+* 【http】          HttpRequest增加setUrlHandler方法（issue#IMD1X@Gitee）
+* 【http】          HttpRequest增加getCookieManager和closeCookie方法（issue#IMDND@Gitee）
+
+### Bug修复
+* 【core】         修复IdcardUtil中isValidCard10空指针问题（issue#IMB7R@Gitee）
+* 【core】         修复SoapRequest空指针问题（issue#IMBUN@Gitee）
+* 【http】          修复文件上传没有关闭File的问题（issue#IMDUY@Gitee）
+* 【json】          修复toBean中有Map参数导致的值丢失问题（issue#IMDEM@Gitee）
+* 【bloomFilter】修复hash值负数问题（issue#154@Github）
+* 【core】          修复Convert中Map强转导致的问题
+
+-------------------------------------------------------------------------------------------------------------
+
 ## 4.1.8
 
 ### 新特性

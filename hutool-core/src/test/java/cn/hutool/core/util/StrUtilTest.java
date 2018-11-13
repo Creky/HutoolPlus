@@ -201,6 +201,40 @@ public class StrUtilTest {
 		String pre = StrUtil.sub(a, -5, a.length());
 		Assert.assertEquals("ghigh", pre);
 	}
+	
+	@Test
+	public void subBeforeTest() {
+		String a = "abcderghigh";
+		String pre = StrUtil.subBefore(a, "d", false);
+		Assert.assertEquals("abc", pre);
+		pre = StrUtil.subBefore(a, 'd', false);
+		Assert.assertEquals("abc", pre);
+		pre = StrUtil.subBefore(a, 'a', false);
+		Assert.assertEquals("", pre);
+		
+		//找不到返回原串
+		pre = StrUtil.subBefore(a, 'k', false);
+		Assert.assertEquals(a, pre);
+		pre = StrUtil.subBefore(a, 'k', true);
+		Assert.assertEquals(a, pre);
+	}
+	
+	@Test
+	public void subAfterTest() {
+		String a = "abcderghigh";
+		String pre = StrUtil.subAfter(a, "d", false);
+		Assert.assertEquals("erghigh", pre);
+		pre = StrUtil.subAfter(a, 'd', false);
+		Assert.assertEquals("erghigh", pre);
+		pre = StrUtil.subAfter(a, 'h', true);
+		Assert.assertEquals("", pre);
+		
+		//找不到字符返回空串
+		pre = StrUtil.subAfter(a, 'k', false);
+		Assert.assertEquals("", pre);
+		pre = StrUtil.subAfter(a, 'k', true);
+		Assert.assertEquals("", pre);
+	}
 
 	@Test
 	public void subSufByLengthTest() {
@@ -302,5 +336,24 @@ public class StrUtilTest {
 		String str4 = "HelloWorld_test";
 		String result4 = StrUtil.toUnderlineCase(str4);
 		Assert.assertEquals("hello_world_test", result4);
+	}
+	
+	@Test
+	public void containsAnyTest() {
+		//字符
+		boolean containsAny = StrUtil.containsAny("aaabbbccc", 'a', 'd');
+		Assert.assertTrue(containsAny);
+		containsAny = StrUtil.containsAny("aaabbbccc", 'e', 'd');
+		Assert.assertFalse(containsAny);
+		containsAny = StrUtil.containsAny("aaabbbccc", 'd', 'c');
+		Assert.assertTrue(containsAny);
+		
+		//字符串
+		containsAny = StrUtil.containsAny("aaabbbccc", "a", "d");
+		Assert.assertTrue(containsAny);
+		containsAny = StrUtil.containsAny("aaabbbccc", "e", "d");
+		Assert.assertFalse(containsAny);
+		containsAny = StrUtil.containsAny("aaabbbccc", "d", "c");
+		Assert.assertTrue(containsAny);
 	}
 }

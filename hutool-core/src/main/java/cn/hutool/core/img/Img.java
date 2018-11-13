@@ -3,12 +3,14 @@ package cn.hutool.core.img;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.color.ColorSpace;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
 import java.awt.image.CropImageFilter;
@@ -28,6 +30,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.util.ImageUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 
 /**
@@ -40,46 +43,54 @@ public class Img {
 
 	private BufferedImage srcImage;
 	private BufferedImage destImage;
+	/** 目标图片文件格式，用于写出 */
 	private String destImageType = ImageUtil.IMAGE_TYPE_JPG;
-	
+	/** 计算x,y坐标的时候是否从中心做为原始坐标开始计算 */
+	private boolean positionBaseCentre = true;
+
 	/**
 	 * 从文件读取图片并开始处理
+	 * 
 	 * @param imageFile 图片文件
 	 * @return {@link Img}
 	 */
 	public static Img from(File imageFile) {
 		return new Img(ImageUtil.read(imageFile));
 	}
-	
+
 	/**
 	 * 从流读取图片并开始处理
+	 * 
 	 * @param in 图片流
 	 * @return {@link Img}
 	 */
 	public static Img from(InputStream in) {
 		return new Img(ImageUtil.read(in));
 	}
-	
+
 	/**
 	 * 从ImageInputStream取图片并开始处理
+	 * 
 	 * @param imageStream 图片流
 	 * @return {@link Img}
 	 */
 	public static Img from(ImageInputStream imageStream) {
 		return new Img(ImageUtil.read(imageStream));
 	}
-	
+
 	/**
 	 * 从URL取图片并开始处理
+	 * 
 	 * @param imageUrl 图片URL
 	 * @return {@link Img}
 	 */
 	public static Img from(URL imageUrl) {
 		return new Img(ImageUtil.read(imageUrl));
 	}
-	
+
 	/**
 	 * 从Image取图片并开始处理
+	 * 
 	 * @param image 图片
 	 * @return {@link Img}
 	 */
@@ -89,14 +100,16 @@ public class Img {
 
 	/**
 	 * 构造
+	 * 
 	 * @param srcImage 来源图片
 	 */
 	public Img(BufferedImage srcImage) {
 		this.srcImage = srcImage;
 	}
-	
+
 	/**
 	 * 设置目标图片文件格式，用于写出
+	 * 
 	 * @param imgType 图片格式
 	 * @return this
 	 * @see ImageUtil#IMAGE_TYPE_JPG
@@ -104,6 +117,17 @@ public class Img {
 	 */
 	public Img setDestImageType(String imgType) {
 		this.destImageType = imgType;
+		return this;
+	}
+
+	/**
+	 * 计算x,y坐标的时候是否从中心做为原始坐标开始计算
+	 * 
+	 * @param positionBaseCentre 是否从中心做为原始坐标开始计算
+	 * @since 4.1.15
+	 */
+	public Img setPositionBaseCentre(boolean positionBaseCentre) {
+		this.positionBaseCentre = positionBaseCentre;
 		return this;
 	}
 
@@ -119,7 +143,7 @@ public class Img {
 			scale = -scale;
 		}
 
-		final BufferedImage srcImg = this.srcImage;
+		final BufferedImage srcImg = getValidSrcImg();
 		int width = NumberUtil.mul(Integer.toString(srcImg.getWidth()), Float.toString(scale)).intValue(); // 得到源图宽
 		int height = NumberUtil.mul(Integer.toString(srcImg.getHeight()), Float.toString(scale)).intValue(); // 得到源图长
 		return scale(width, height);
@@ -134,7 +158,7 @@ public class Img {
 	 * @return this
 	 */
 	public Img scale(int width, int height) {
-		final BufferedImage srcImg = this.srcImage;
+		final BufferedImage srcImg = getValidSrcImg();
 		int srcHeight = srcImg.getHeight();
 		int srcWidth = srcImg.getWidth();
 		int scaleType;
@@ -152,7 +176,7 @@ public class Img {
 		this.destImage = ImageUtil.toBufferedImage(image);
 		return this;
 	}
-	
+
 	/**
 	 * 缩放图像（按高度和宽度缩放）<br>
 	 * 缩放后默认为jpeg格式
@@ -163,7 +187,7 @@ public class Img {
 	 * @return this
 	 */
 	public Img scale(int width, int height, Color fixedColor) {
-		final BufferedImage srcImage = this.srcImage;
+		final BufferedImage srcImage = getValidSrcImg();
 		int srcHeight = srcImage.getHeight(null);
 		int srcWidth = srcImage.getWidth(null);
 		double heightRatio = NumberUtil.div(height, srcHeight);
@@ -183,7 +207,7 @@ public class Img {
 		if (null == fixedColor) {// 补白
 			fixedColor = Color.WHITE;
 		}
-		final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		final BufferedImage image = new BufferedImage(width, height, getTypeInt());
 		Graphics2D g = image.createGraphics();
 
 		// 设置背景
@@ -205,12 +229,56 @@ public class Img {
 	 * 图像切割(按指定起点坐标和宽高切割)
 	 * 
 	 * @param rectangle 矩形对象，表示矩形区域的x，y，width，height
-	 * @return {@link BufferedImage}
+	 * @return this
 	 */
 	public Img cut(Rectangle rectangle) {
+		final BufferedImage srcImage = getValidSrcImg();
+		rectangle = fixRectangle(rectangle, srcImage.getWidth(), srcImage.getHeight());
+
 		final ImageFilter cropFilter = new CropImageFilter(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 		final Image image = Toolkit.getDefaultToolkit().createImage(new FilteredImageSource(srcImage.getSource(), cropFilter));
 		this.destImage = ImageUtil.toBufferedImage(image);
+		return this;
+	}
+
+	/**
+	 * 图像切割为圆形(按指定起点坐标和半径切割)，填充满整个图片（直径取长宽最小值）
+	 * 
+	 * @param x 原图的x坐标起始位置
+	 * @param y 原图的y坐标起始位置
+	 * @return this
+	 * @since 4.1.15
+	 */
+	public Img cut(int x, int y) {
+		return cut(x, y, -1);
+	}
+
+	/**
+	 * 图像切割为圆形(按指定起点坐标和半径切割)
+	 * 
+	 * @param x 原图的x坐标起始位置
+	 * @param y 原图的y坐标起始位置
+	 * @param radius 半径，小于0表示填充满整个图片（直径取长宽最小值）
+	 * @return this
+	 * @since 4.1.15
+	 */
+	public Img cut(int x, int y, int radius) {
+		final BufferedImage srcImage = getValidSrcImg();
+		final int width = srcImage.getWidth();
+		final int height = srcImage.getHeight();
+
+		final int diameter = radius > 0 ? radius * 2 : Math.min(width, height);
+		final BufferedImage destImage = new BufferedImage(diameter, diameter, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = destImage.createGraphics();
+		g.setClip(new Ellipse2D.Double(0, 0, diameter, diameter));
+
+		if (this.positionBaseCentre) {
+			x = x - width / 2 + diameter / 2;
+			y = y - height / 2 + diameter / 2;
+		}
+		g.drawImage(srcImage, x, y, null);
+		g.dispose();
+		this.destImage = destImage;
 		return this;
 	}
 
@@ -221,7 +289,7 @@ public class Img {
 	 */
 	public Img gray() {
 		final ColorConvertOp op = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
-		this.destImage = op.filter(this.srcImage, null);
+		this.destImage = op.filter(getValidSrcImg(), null);
 		return this;
 	}
 
@@ -231,7 +299,7 @@ public class Img {
 	 * @return this
 	 */
 	public Img binary() {
-		this.destImage = ImageUtil.copyImage(this.srcImage, BufferedImage.TYPE_BYTE_BINARY);
+		this.destImage = ImageUtil.copyImage(getValidSrcImg(), BufferedImage.TYPE_BYTE_BINARY);
 		return this;
 	}
 
@@ -248,7 +316,7 @@ public class Img {
 	 * @return 处理后的图像
 	 */
 	public Img pressText(String pressText, Color color, Font font, int x, int y, float alpha) {
-		final BufferedImage destImage = this.srcImage;
+		final BufferedImage destImage = getValidSrcImg();
 		final Graphics2D g = destImage.createGraphics();
 
 		// 抗锯齿
@@ -258,14 +326,16 @@ public class Img {
 		// 透明度
 		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
 		// 在指定坐标绘制水印文字
-		final int fontSize = font.getSize();
-		g.drawString(pressText, (destImage.getWidth() - (getLength(pressText) * fontSize)) / 2 + x, (destImage.getHeight() - fontSize) / 2 + y);
+		final FontMetrics metrics = g.getFontMetrics(font);
+		final int textLength = metrics.stringWidth(pressText);
+		final int textHeight = metrics.getAscent() - metrics.getLeading() - metrics.getDescent();
+		g.drawString(pressText, Math.abs(destImage.getWidth() - textLength) / 2 + x, Math.abs(destImage.getHeight() + textHeight) / 2 + y);
 		g.dispose();
 		this.destImage = destImage;
 
 		return this;
 	}
-	
+
 	/**
 	 * 给图片添加图片水印<br>
 	 * 此方法并不关闭流
@@ -277,20 +347,31 @@ public class Img {
 	 * @return this
 	 */
 	public Img pressImage(Image pressImg, int x, int y, float alpha) {
-		final BufferedImage destImg = this.srcImage;
-		final int width = destImg.getWidth();
-		final int height = destImg.getHeight();
+		final int pressImgWidth = pressImg.getWidth(null);
+		final int pressImgHeight = pressImg.getHeight(null);
 
-		int pressImgWidth = pressImg.getWidth(null);
-		int pressImgHeight = pressImg.getHeight(null);
-		x += (width - pressImgWidth) / 2;
-		y += (height - pressImgHeight) / 2;
-		
-		draw(destImg, pressImg, new Rectangle(x, y, pressImgWidth, pressImgHeight), alpha);
+		return pressImage(pressImg, new Rectangle(x, y, pressImgWidth, pressImgHeight), alpha);
+	}
+
+	/**
+	 * 给图片添加图片水印<br>
+	 * 此方法并不关闭流
+	 * 
+	 * @param pressImg 水印图片，可以使用{@link ImageIO#read(File)}方法读取文件
+	 * @param rectangle 矩形对象，表示矩形区域的x，y，width，height，x,y从背景图片中心计算
+	 * @param alpha 透明度：alpha 必须是范围 [0.0, 1.0] 之内（包含边界值）的一个浮点数字
+	 * @return this
+	 * @since 4.1.14
+	 */
+	public Img pressImage(Image pressImg, Rectangle rectangle, float alpha) {
+		final BufferedImage destImg = getValidSrcImg();
+
+		rectangle = fixRectangle(rectangle, destImg.getWidth(), destImg.getHeight());
+		draw(destImg, pressImg, rectangle, alpha);
 		this.destImage = destImg;
 		return this;
 	}
-	
+
 	/**
 	 * 旋转图片为指定角度<br>
 	 * 来自：http://blog.51cto.com/cping1982/130066
@@ -300,28 +381,30 @@ public class Img {
 	 * @since 3.2.2
 	 */
 	public Img rotate(int degree) {
-		final BufferedImage image = this.srcImage;
+		final BufferedImage image = getValidSrcImg();
 		int width = image.getWidth(null);
 		int height = image.getHeight(null);
-		final BufferedImage destImg = new BufferedImage(width, height, getTypeInt());
+		final Rectangle rectangle = calcRotatedSize(width, height, degree);
+		final BufferedImage destImg = new BufferedImage(rectangle.width, rectangle.height, getTypeInt());
 		Graphics2D graphics2d = destImg.createGraphics();
 		// 抗锯齿
 		graphics2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		// 从中心旋转
+		graphics2d.translate((rectangle.width - width) / 2, (rectangle.height - height) / 2);
 		graphics2d.rotate(Math.toRadians(degree), width / 2, height / 2);
 		graphics2d.drawImage(image, 0, 0, null);
 		graphics2d.dispose();
 		this.destImage = destImg;
 		return this;
 	}
-	
+
 	/**
 	 * 水平翻转图像
 	 * 
 	 * @return this
 	 */
 	public Img flip() {
-		final BufferedImage image = this.srcImage;
+		final BufferedImage image = getValidSrcImg();
 		int width = image.getWidth();
 		int height = image.getHeight();
 		final BufferedImage destImg = new BufferedImage(width, height, getTypeInt());
@@ -341,7 +424,7 @@ public class Img {
 	public BufferedImage getImg() {
 		return this.destImage;
 	}
-	
+
 	/**
 	 * 写出图像
 	 * 
@@ -375,7 +458,7 @@ public class Img {
 	public void write(File targetFile) throws IORuntimeException {
 		String formatName = FileUtil.extName(targetFile);
 		if (StrUtil.isBlank(formatName)) {
-			formatName = ImageUtil.IMAGE_TYPE_JPG;
+			formatName = this.destImageType;
 		}
 		try {
 			ImageIO.write(this.destImage, formatName, targetFile);// 输出到文件
@@ -390,7 +473,7 @@ public class Img {
 	 * 
 	 * @param backgroundImg 背景图片
 	 * @param img 要绘制的图片
-	 * @param rectangle 矩形对象，表示矩形区域的x，y，width，height
+	 * @param rectangle 矩形对象，表示矩形区域的x，y，width，height，x,y从背景图片中心计算
 	 * @return 绘制后的背景
 	 */
 	private static BufferedImage draw(BufferedImage backgroundImg, Image img, Rectangle rectangle, float alpha) {
@@ -401,25 +484,6 @@ public class Img {
 		return backgroundImg;
 	}
 
-	/**
-	 * 计算text的长度（一个中文算两个字符）<br>
-	 * 如：text="中国",返回 2；text="test",返回 2；text="中国ABC",返回 4.
-	 * 
-	 * @param text 文本
-	 * @return 字符长度
-	 */
-	private static int getLength(String text) {
-		int length = 0;
-		for (int i = 0; i < text.length(); i++) {
-			if (String.valueOf(text.charAt(i)).getBytes().length > 1) {
-				length += 2;
-			} else {
-				length += 1;
-			}
-		}
-		return length / 2;
-	}
-	
 	/**
 	 * 获取int类型的图片类型
 	 * 
@@ -434,6 +498,66 @@ public class Img {
 		default:
 			return BufferedImage.TYPE_INT_RGB;
 		}
+	}
+
+	/**
+	 * 获取有效的源图片，首先检查上一次处理的结果图片，如无则使用用户传入的源图片
+	 * 
+	 * @return 有效的源图片
+	 */
+	private BufferedImage getValidSrcImg() {
+		return ObjectUtil.defaultIfNull(this.destImage, this.srcImage);
+	}
+
+	/**
+	 * 修正矩形框位置，如果{@link Img#setPositionFromCentre(boolean)} 设为{@code true}，则坐标修正为基于图形中心，否则基于左上角
+	 * 
+	 * @param rectangle 矩形
+	 * @param baseWidth 参考宽
+	 * @param baseHeight 参考高
+	 * @return 修正后的{@link Rectangle}
+	 * @since 4.1.15
+	 */
+	private Rectangle fixRectangle(Rectangle rectangle, int baseWidth, int baseHeight) {
+		if (this.positionBaseCentre) {
+			// 修正图片位置从背景的中心计算
+			rectangle.setLocation(//
+					rectangle.x + (int) (Math.abs(baseWidth - rectangle.width) / 2), //
+					rectangle.y + (int) (Math.abs(baseHeight - rectangle.height) / 2)//
+			);
+		}
+		return rectangle;
+	}
+
+	/**
+	 * 计算旋转后的图片尺寸
+	 * 
+	 * @param width 宽度
+	 * @param height 高度
+	 * @param degree 旋转角度
+	 * @return 计算后目标尺寸
+	 * @since 4.1.20
+	 */
+	private static Rectangle calcRotatedSize(int width, int height, int degree) {
+		if (degree >= 90) {
+			if (degree / 90 % 2 == 1) {
+				int temp = height;
+				height = width;
+				width = temp;
+			}
+			degree = degree % 90;
+		}
+		double r = Math.sqrt(height * height + width * width) / 2;
+		double len = 2 * Math.sin(Math.toRadians(degree) / 2) * r;
+		double angel_alpha = (Math.PI - Math.toRadians(degree)) / 2;
+		double angel_dalta_width = Math.atan((double) height / width);
+		double angel_dalta_height = Math.atan((double) width / height);
+		int len_dalta_width = (int) (len * Math.cos(Math.PI - angel_alpha - angel_dalta_width));
+		int len_dalta_height = (int) (len * Math.cos(Math.PI - angel_alpha - angel_dalta_height));
+		int des_width = width + len_dalta_width * 2;
+		int des_height = height + len_dalta_height * 2;
+
+		return new Rectangle(des_width, des_height);
 	}
 	// ---------------------------------------------------------------------------------------------------------------- Private method end
 }

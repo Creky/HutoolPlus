@@ -4,7 +4,6 @@
 package cn.hutool.poi.test;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +33,15 @@ public class ExcelWriteTest {
 
 	@Test
 	@Ignore
+	public void writeTest2() {
+		List<String> row = CollUtil.newArrayList("姓名", "加班日期", "下班时间", "加班时长", "餐补", "车补次数", "车补", "总计");
+		ExcelWriter overtimeWriter = ExcelUtil.getWriter("e:/single_line.xlsx");
+		overtimeWriter.write(row);
+		overtimeWriter.close();
+	}
+
+	@Test
+	@Ignore
 	public void writeTest() {
 		List<?> row1 = CollUtil.newArrayList("aaaaa", "bb", "cc", "dd", DateUtil.date(), 3.22676575765);
 		List<?> row2 = CollUtil.newArrayList("aa1", "bb1", "cc1", "dd1", DateUtil.date(), 250.7676);
@@ -42,15 +50,15 @@ public class ExcelWriteTest {
 		List<?> row5 = CollUtil.newArrayList("aa4", "bb4", "cc4", "dd4", DateUtil.date(), 28.00);
 
 		List<List<?>> rows = CollUtil.newArrayList(row1, row2, row3, row4, row5);
-		for(int i=0; i < 400; i++) {
-			//超大列表写出测试
+		for (int i = 0; i < 400; i++) {
+			// 超大列表写出测试
 			rows.add(ObjectUtil.clone(row1));
 		}
-		
+
 		String filePath = "e:/writeTest.xlsx";
 		FileUtil.del(filePath);
 		// 通过工具类创建writer
-		ExcelWriter writer = ExcelUtil.getWriter("e:/writeTest.xlsx");
+		ExcelWriter writer = ExcelUtil.getWriter(filePath);
 		// 通过构造方法创建writer
 		// ExcelWriter writer = new ExcelWriter("d:/writeTest.xls");
 
@@ -64,7 +72,7 @@ public class ExcelWriteTest {
 		// 关闭writer，释放内存
 		writer.close();
 	}
-	
+
 	@Test
 	@Ignore
 	public void mergeTest() {
@@ -87,10 +95,10 @@ public class ExcelWriteTest {
 		writer.merge(row1.size() - 1, "测试标题");
 		// 一次性写出内容，使用默认样式
 		writer.write(rows);
-		
+
 		// 合并单元格后的标题行，使用默认标题样式
 		writer.merge(7, 10, 4, 10, "测试Merge", false);
-		
+
 		// 关闭writer，释放内存
 		writer.close();
 	}
@@ -116,14 +124,14 @@ public class ExcelWriteTest {
 
 		// 通过工具类创建writer
 		ExcelWriter writer = ExcelUtil.getWriter("e:/writeMapTest.xlsx");
-		
-		//设置内容字体
+
+		// 设置内容字体
 		Font font = writer.createFont();
 		font.setBold(true);
-		font.setColor(Font.COLOR_RED); 
-		font.setItalic(true); 
+		font.setColor(Font.COLOR_RED);
+		font.setItalic(true);
 		writer.getStyleSet().setFont(font, true);
-		
+
 		// 合并单元格后的标题行，使用默认标题样式
 		writer.merge(row1.size() - 1, "一班成绩单");
 		// 一次性写出内容，使用默认样式
@@ -131,7 +139,7 @@ public class ExcelWriteTest {
 		// 关闭writer，释放内存
 		writer.close();
 	}
-	
+
 	@Test
 	@Ignore
 	public void writeMapTest2() {
@@ -141,10 +149,10 @@ public class ExcelWriteTest {
 		row1.put("成绩", 88.32);
 		row1.put("是否合格", true);
 		row1.put("考试日期", DateUtil.date());
-		
+
 		// 通过工具类创建writer
 		ExcelWriter writer = ExcelUtil.getWriter("e:/writeMapTest2.xlsx");
-		
+
 		// 一次性写出内容，使用默认样式
 		writer.writeRow(row1, true);
 		// 关闭writer，释放内存
@@ -173,7 +181,7 @@ public class ExcelWriteTest {
 		String file = "e:/writeBeanTest.xlsx";
 		FileUtil.del(file);
 		ExcelWriter writer = ExcelUtil.getWriter(file);
-		//自定义标题
+		// 自定义标题
 		writer.addHeaderAlias("name", "姓名");
 		writer.addHeaderAlias("age", "年龄");
 		writer.addHeaderAlias("score", "分数");
@@ -186,7 +194,7 @@ public class ExcelWriteTest {
 		// 关闭writer，释放内存
 		writer.close();
 	}
-	
+
 	@Test
 	@Ignore
 	public void writeCellValueTest() {
@@ -194,53 +202,5 @@ public class ExcelWriteTest {
 		writer.writeCellValue(3, 5, "aaa");
 		writer.writeCellValue(3, 5, "aaa");
 		writer.close();
-	}
-
-	static class TestBean {
-		private String name;
-		private int age;
-		private double score;
-		private boolean isPass;
-		private Date examDate;
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public int getAge() {
-			return age;
-		}
-
-		public void setAge(int age) {
-			this.age = age;
-		}
-
-		public double getScore() {
-			return score;
-		}
-
-		public void setScore(double score) {
-			this.score = score;
-		}
-
-		public boolean isPass() {
-			return isPass;
-		}
-
-		public void setPass(boolean isPass) {
-			this.isPass = isPass;
-		}
-
-		public Date getExamDate() {
-			return examDate;
-		}
-
-		public void setExamDate(Date examDate) {
-			this.examDate = examDate;
-		}
 	}
 }

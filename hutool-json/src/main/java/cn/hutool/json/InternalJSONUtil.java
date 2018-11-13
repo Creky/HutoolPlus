@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import cn.hutool.core.bean.BeanUtil;
@@ -17,6 +19,7 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.convert.ConvertException;
 import cn.hutool.core.convert.ConverterRegistry;
 import cn.hutool.core.convert.impl.CollectionConverter;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -38,15 +41,15 @@ final class InternalJSONUtil {
 	 * 
 	 * @param writer Writer
 	 * @param value 值
-	 * @param indentFactor
+	 * @param indentFactor 每一级别的缩进量
 	 * @param indent 缩进空格数
+	 * @param config 配置项
 	 * @return Writer
 	 * @throws JSONException
 	 * @throws IOException
 	 */
-	protected static final Writer writeValue(Writer writer, Object value, int indentFactor, int indent) throws JSONException, IOException {
+	protected static final Writer writeValue(Writer writer, Object value, int indentFactor, int indent, JSONConfig config) throws JSONException, IOException {
 		if (value == null || value instanceof JSONNull) {
-			writer.write("null");
 		} else if (value instanceof JSON) {
 			((JSON) value).write(writer, indentFactor, indent);
 		} else if (value instanceof Map) {
@@ -55,10 +58,9 @@ final class InternalJSONUtil {
 			new JSONArray(value).write(writer, indentFactor, indent);
 		} else if (value instanceof Number) {
 			writer.write(NumberUtil.toStr((Number) value));
-		}else if (value instanceof Date) {
-			writer.write(String.valueOf(((Date) value).getTime()));
-		}else if (value instanceof Calendar) {
-			writer.write(String.valueOf(((Calendar) value).getTimeInMillis()));
+		} else if (value instanceof Date || value instanceof Calendar) {
+			final String format = (null == config) ? null : config.getDateFormat();
+			writer.write(formatDate(value, format));
 		} else if (value instanceof Boolean) {
 			writer.write(value.toString());
 		} else if (value instanceof JSONString) {
@@ -74,7 +76,7 @@ final class InternalJSONUtil {
 		}
 		return writer;
 	}
-
+	
 	/**
 	 * 缩进，使用空格符
 	 * 
@@ -228,7 +230,7 @@ final class InternalJSONUtil {
 			@Override
 			public Object value(String key, Type valueType) {
 				Object value = jsonObject.get(key);
-				if(null == value) {
+				if (null == value) {
 					value = jsonObject.get(StrUtil.toUnderlineCase(key));
 				}
 				return jsonConvert(valueType, value, ignoreError);
@@ -236,9 +238,9 @@ final class InternalJSONUtil {
 
 			@Override
 			public boolean containsKey(String key) {
-				if(jsonObject.containsKey(key)) {
+				if (jsonObject.containsKey(key)) {
 					return true;
-				}else if(jsonObject.containsKey(StrUtil.toUnderlineCase(key))) {
+				} else if (jsonObject.containsKey(StrUtil.toUnderlineCase(key))) {
 					return true;
 				}
 				return false;
@@ -255,7 +257,7 @@ final class InternalJSONUtil {
 	 * @param ignoreError 是否忽略转换异常
 	 * @return 数组对象
 	 */
-	protected static Object toArray(final JSONArray jsonArray, Class<?> arrayClass, boolean ignoreError) {
+	protected static Object toArray(JSONArray jsonArray, Class<?> arrayClass, boolean ignoreError) {
 		final Class<?> componentType = arrayClass.isArray() ? arrayClass.getComponentType() : arrayClass;
 		final int size = jsonArray.size();
 		final Object objArray = Array.newInstance(componentType, size);
@@ -264,6 +266,25 @@ final class InternalJSONUtil {
 		}
 
 		return objArray;
+	}
+
+	/**
+	 * 将JSONArray转换为指定类型的对量列表
+	 * 
+	 * @param <T> 元素类型
+	 * @param jsonArray JSONArray
+	 * @param elementType 对象元素类型
+	 * @param ignoreError 是否忽略错误
+	 * @return 对象列表
+	 */
+	@SuppressWarnings("unchecked")
+	protected static <T> List<T> toList(JSONArray jsonArray, Class<T> elementType, boolean ignoreError) {
+		final int size = jsonArray.size();
+		final List<T> result = new ArrayList<>(size);
+		for (Object obj : jsonArray) {
+			result.add((T) jsonConvert(elementType, obj, ignoreError));
+		}
+		return result;
 	}
 
 	/**
@@ -292,11 +313,14 @@ final class InternalJSONUtil {
 			// 目标为JSON格式
 			return JSONUtil.parse(value);
 		}
-		
+
 		Object targetValue = null;
 		// 非标准转换格式
 		if (value instanceof JSONObject) {
-			targetValue = ((JSONObject) value).toBean(type, ignoreError);
+			if (BeanUtil.isBean(rowType)) {
+				// 目标为Bean
+				targetValue = ((JSONObject) value).toBean(type, ignoreError);
+			}
 		} else if (value instanceof JSONArray) {
 			if (rowType.isArray()) {
 				// 目标为数组
@@ -305,11 +329,11 @@ final class InternalJSONUtil {
 				targetValue = (new CollectionConverter(type, TypeUtil.getTypeArgument(type))).convert(value, null);
 			}
 		}
-		
+
 		// 标准格式转换
 		if (null == targetValue) {
 			try {
-				targetValue = ConverterRegistry.getInstance().convert(rowType, value);
+				targetValue = ConverterRegistry.getInstance().convert(type, value);
 			} catch (ConvertException e) {
 				if (ignoreError) {
 					return null;
@@ -317,16 +341,34 @@ final class InternalJSONUtil {
 				throw e;
 			}
 		}
-		
+
 		if (null == targetValue && false == ignoreError) {
 			if (value instanceof CharSequence && StrUtil.isBlank((CharSequence) value)) {
 				// 对于传入空字符串的情况，如果转换的目标对象是非字符串或非原书类型，转换器会返回false。
 				// 此处特殊处理，认为返回null属于正常情况
 				return null;
 			}
-			throw new ConvertException("Can not convert [{}] to type [{}]", value, rowType.getName());
+			throw new ConvertException("Can not convert {} to type {}", value, rowType.getName());
 		}
 
 		return targetValue;
+	}
+	
+	/**
+	 * 按照给定格式格式化日期，格式为空时返回时间戳字符串
+	 * 
+	 * @param dateObj Date或者Calendar对象
+	 * @param format 格式
+	 * @return 日期字符串
+	 */
+	private static String formatDate(Object dateObj, String format) {
+		if (StrUtil.isNotBlank(format)) {
+			final Date date = (dateObj instanceof Date) ? (Date)dateObj : ((Calendar)dateObj).getTime();
+			//用户定义了日期格式
+			return DateUtil.format(date, format);
+		}
+		
+		//默认使用时间戳
+		return String.valueOf((dateObj instanceof Date) ? ((Date)dateObj).getTime() : ((Calendar)dateObj).getTimeInMillis());
 	}
 }

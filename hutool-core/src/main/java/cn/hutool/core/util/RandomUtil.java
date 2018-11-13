@@ -11,12 +11,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.exceptions.UtilException;
+import cn.hutool.core.lang.UUID;
 import cn.hutool.core.lang.WeightRandom;
 import cn.hutool.core.lang.WeightRandom.WeightObj;
 
@@ -58,6 +58,19 @@ public class RandomUtil {
 		} catch (NoSuchAlgorithmException e) {
 			throw new UtilException(e);
 		}
+	}
+	
+	/**
+	 * 获取随机数产生器
+	 * 
+	 * @param isSecure 是否为强随机数生成器 (RNG)
+	 * @return {@link Random}
+	 * @since 4.1.15
+	 * @see #getSecureRandom()
+	 * @see #getRandom()
+	 */
+	public static Random getRandom(boolean isSecure) {
+		return isSecure ? getSecureRandom() : getRandom();
 	}
 
 	/**
@@ -382,9 +395,9 @@ public class RandomUtil {
 	}
 
 	/**
-	 * 随机数字
+	 * 随机数字，数字为0~9单个数字
 	 * 
-	 * @return 随机字符
+	 * @return 随机数字字符
 	 * @since 3.1.2
 	 */
 	public static int randomNumber() {
@@ -448,7 +461,9 @@ public class RandomUtil {
 	// ------------------------------------------------------------------- UUID
 	/**
 	 * @return 随机UUID
+	 * @deprecated 请使用{@link IdUtil#randomUUID()}
 	 */
+	@Deprecated
 	public static String randomUUID() {
 		return UUID.randomUUID().toString();
 	}
@@ -458,9 +473,11 @@ public class RandomUtil {
 	 * 
 	 * @return 简化的UUID，去掉了横线
 	 * @since 3.2.2
+	 * @deprecated 请使用{@link IdUtil#simpleUUID()}
 	 */
+	@Deprecated
 	public static String simpleUUID() {
-		return randomUUID().replace("-", "");
+		return UUID.randomUUID().toString(true);
 	}
 
 	/**
